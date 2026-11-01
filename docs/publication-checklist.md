@@ -20,7 +20,7 @@ This checklist prepares a release. It does **not** authorize enabling GitHub Pag
 - [x] Chromium workflow and captured visual pass at 375/768/1024/1440 px in light and dark.
 - [x] Automated keyboard/focus, reduced-motion and WCAG A/AA checks in the real browser.
 - [ ] Review using an actual screen reader and additional browser engines.
-- [x] Create genuine Chromium screenshots of the local application, at four widths in both themes.
+- [x] Eight meaningful genuine screenshots: active assessment, complete migration results, expanded explorer profile, comparison and light/desktop plus dark/mobile architecture. The full browser matrix covers all four widths/both themes.
 
 ## Editorial publication
 
@@ -49,6 +49,16 @@ The local checks on 1 November 2026 cover deterministic rules, catalogue/source 
 
 A read-only pre-publication security review found no reportable vulnerability in the static/runtime, Markdown build, loopback server or workflow boundary. Advisory and targeted credential checks do not establish package provenance, exclude future vulnerabilities or substitute for a comprehensive organisational secret scan.
 
-The targeted repository scan found no private-key blocks, common GitHub/AWS token patterns or Azure Storage account-key strings in source, configuration and documentation files. The final local run passed 52 Node tests and 56 Chromium workflow/accessibility tests; the build validated references in 12 HTML pages and included 12 genuine screenshots.
+The targeted repository scan checks private-key blocks, common GitHub/AWS token patterns and Azure Storage account-key strings. It is not a comprehensive secret certification. The corrected suite contains 64 Node tests and 56 Chromium workflow/accessibility tests; the full build validates 9 HTML pages and includes 8 genuine screenshots.
 
 Publication still requires owner approval, GitHub Actions verification, current external source/link review, actual screen-reader review and independently verified public application/article URLs after authorised deployment.
+
+## After explicit authorisation — release gates
+
+- Push the reviewed code before sharing an article link that presents the public repository as the implemented project. The public repository is not evidence of these local commits until an authorised push.
+- Run CI on `main`; the manual Pages workflow also requires `github.ref == 'refs/heads/main'` and affirmative confirmation. Do not enable Pages or invoke it without owner approval.
+- Verify the actual deployment URL and every linked page/assets; record HTTP 200 after redirects and inspect the public rendering.
+- Update article captions/footer that say “running locally” or “not a deployed website”, the byline/review date where genuinely rechecked, README status and the separate LinkedIn URL fields using only verified URLs.
+- Remove release-dependent “pending” wording only after the corresponding task has actually completed. Do not fabricate a publication date or URL.
+- Re-run source/link/lifecycle review, all local checks, security advisory and credential-pattern scans, browser checks and screenshot inspection for the release build.
+- Obtain editorial approval and separate authorisation to publish the article or post. The LinkedIn draft, checklist and community template remain excluded from `dist/`.

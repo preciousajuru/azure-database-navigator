@@ -10,6 +10,10 @@ import { scenarios } from '../src/data/scenarios.js';
 import { serviceById } from '../src/data/services.js';
 import { sourceById } from '../src/data/sources.js';
 import { ruleById } from '../src/data/rules.js';
+import { execFileSync } from 'node:child_process';
+import { readdir, readFile } from 'node:fs/promises';
+import { privateDocs, publicDocs } from '../scripts/publication.mjs';
+import { sourceRegisterTable } from '../scripts/source-register.mjs';
 
 test('capability hubs and unregistered article evidence are rejected', () => {
   assert.equal(isHubSource({ url: 'https://learn.microsoft.com/en-us/azure/search/' }), true);
@@ -17,6 +21,31 @@ test('capability hubs and unregistered article evidence are rejected', () => {
   assert.deepEqual(evidenceLinkIssues('[Evidence](https://learn.microsoft.com/test)', [{ url: 'https://learn.microsoft.com/test' }]), []);
   assert.equal(evidenceLinkIssues('[Evidence](https://learn.microsoft.com/missing)', []).length, 1);
   assert.deepEqual(evidenceLinkIssues('[Companion](https://github.com/preciousajuru/azure-compute-navigator)', []), []);
+});
+
+test('production build contains published docs but never internal drafts, and uses the canonical source register', async () => {
+  execFileSync(process.execPath, ['scripts/build.mjs'], { stdio: 'pipe' });
+  const pages = await readdir(new URL('../dist/docs/', import.meta.url));
+  for (const name of privateDocs) assert.ok(!pages.includes(name.replace('.md', '.html')));
+  for (const name of publicDocs) assert.ok(pages.includes(name.replace('.md', '.html')));
+  assert.equal(pages.length, publicDocs.length);
+  assert.match(await readFile(new URL('../dist/docs/sources.html', import.meta.url), 'utf8'), /postgres-replicas/);
+  assert.ok(!sourceRegisterTable().includes('https://learn.microsoft.com/en-us/azure/search/)'));
+});
+
+test('canonical article is publication length and the eight captures are genuine PNG files', async () => {
+  const article = await readFile(new URL('../docs/article.md', import.meta.url), 'utf8');
+  const words = article.split(/\s+/).length;
+  assert.ok(words >= 1200 && words <= 1700, `${words} words`);
+  assert.match(article, /## Introducing Azure Database Navigator/);
+  assert.match(article, /## A practical example: WordPress using MariaDB/);
+  const images = (await readdir(new URL('../screenshots/', import.meta.url))).filter((name) => name.endsWith('.png'));
+  assert.equal(images.length, 8);
+  for (const name of images) {
+    const bytes = await readFile(new URL(`../screenshots/${name}`, import.meta.url));
+    assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', name);
+    assert.ok(bytes.readUInt32BE(16) >= 300 && bytes.readUInt32BE(20) > 600, name);
+  }
 });
 
 test('link validation resolves project-relative pages, assets and generated anchors', async () => {

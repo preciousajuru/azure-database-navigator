@@ -2,86 +2,134 @@
 
 By Precious Ajuru · 1 November 2026
 
-Start with the data, not the service catalogue. What must the application read and change together? What has to stay compatible with an existing engine? Where do users need data, and how much recovery work can the team own? Those answers make a useful shortlist. A language, a JSON payload or an “AI” label does not.
+You have an application. It works. Now it needs somewhere to keep its data.
 
-Azure has a broad data platform, and the names can make unlike things sound interchangeable. A database engine, a managed service, a client API, a cache and a search index each solve different problems. One application can need more than one, but a simpler design is preferable when one store meets its requirements.
+Azure SQL Database looks reasonable. Someone suggests PostgreSQL. Then Cosmos DB enters the conversation. Before long, you are comparing products without having agreed what the application needs.
 
-## For business transactions, begin with a relational model
+That is the wrong starting point.
 
-Consider customers, orders and payments. The application needs related records, joins, constraints and changes that must succeed or fail together. That is a relational workload. The first question is which engine and operating model fit the application, not whether its team writes C#, JavaScript or Python.
+Changing a database can mean changing queries, transaction boundaries, drivers and recovery procedures. It deserves more thought than picking a familiar name from the portal.
 
-[Microsoft’s data-model guidance](https://learn.microsoft.com/en-us/azure/architecture/data-guide/technology-choices/understand-data-store-models) describes relational stores as suited to transactional data, integrity constraints and rich SQL queries. Azure SQL Database and Azure Database for PostgreSQL Flexible Server are sensible starting candidates. Compare their engine features, drivers, team experience and integration requirements.
+So start with the data. Not the database.
 
-MySQL Flexible Server is also relational. It is particularly relevant when the application needs the MySQL engine and ecosystem. A relational recommendation does not mean every relational engine is compatible with every other one.
+## What must happen together?
 
-![The actual Azure Database Navigator assessment, showing workload-first questions and the four navigation views.](../screenshots/assessment-light-1440.png)
+Imagine an order, its items and a payment record. Which changes must succeed or fail together? What prevents an item referring to an order that does not exist? Which questions need joins?
 
-*Azure Database Navigator running locally: requirements first, without asking the user to choose a favourite engine.*
+Those are relational questions. [Microsoft's data-model guidance](https://learn.microsoft.com/en-us/azure/architecture/data-guide/technology-choices/understand-data-store-models) describes relational stores around transactions, integrity constraints and SQL queries. Azure SQL Database and PostgreSQL Flexible Server are candidates worth comparing.
 
-## Azure SQL Database, Managed Instance and SQL Server on VMs are not one choice
+Nonrelational does not mean unstructured or careless. A document model can keep an aggregate together. Key-value storage suits known-key access. Graph traversal and time-window analytics ask different questions again.
 
-“Azure SQL” covers different deployment models. [Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/azure-sql-iaas-vs-paas-what-is-overview?view=azuresql) is a managed, database-scoped option for application databases. Provisioned or serverless compute, single databases or elastic pools, and General Purpose, Business Critical or Hyperscale are configuration decisions, not unrelated engines. Their availability and suitability depend on the service configuration.
+Choose around the operations the application performs. Its programming language does not settle the engine. Neither does the fact that its API returns JSON.
 
-[Azure SQL Managed Instance](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/sql-managed-instance-paas-overview) provides a managed SQL Server instance model. Assess it when a migration depends on documented instance features. Microsoft’s [Azure SQL decision tree](https://learn.microsoft.com/en-us/azure/azure-sql/azure-sql-decision-tree?view=azuresql) calls out SQL Agent, CLR, linked servers, cross-database queries and transactional replication as factors to investigate.
+![A genuine SQL Server migration shortlist showing Managed Instance and VM alternatives, reasons, validation gates and open questions.](../screenshots/result-light-1440.png)
 
-Need operating-system or file-system access, or a specific SQL Server version? The decision tree points to SQL Server on Azure VMs. That control brings a different operational burden. Decide who owns patching, backups, monitoring, high availability and disaster recovery. An existing SQL Server running on a VM does not itself require a VM target.
+*Azure Database Navigator running locally. Instance dependencies shape this migration shortlist; feature and recovery validation remain open.*
 
-Before choosing a destination, ask whether the current database needs to move at all. Then inventory versions, jobs, procedures, functions, triggers, extensions, drivers, linked servers, administrative privileges and operational scripts. Include vendor support and permissible downtime. “Nearly compatible” is not a migration test.
+## Azure SQL is not one deployment model
 
-## PostgreSQL and MySQL are engine decisions
+With [Azure SQL Database](https://learn.microsoft.com/en-us/azure/azure-sql/database/sql-database-paas-overview?view=azuresql), the scope is the database. Microsoft manages platform patching and backups; your team still owns the schema, permissions, queries and recovery testing.
 
-Azure Database for PostgreSQL Flexible Server is managed PostgreSQL with configurable compute and server settings. If the application depends on an extension, check its exact name and version against the [current extension allow-list](https://learn.microsoft.com/en-us/azure/postgresql/extensions/how-to-allow-extensions). A description mentioning extensions is not proof that yours is available in the selected version or configuration.
+Single database or elastic pool? Provisioned or serverless compute? General Purpose, Business Critical or Hyperscale? Those are configuration questions within the service, not different database engines.
 
-MySQL Flexible Server is managed MySQL, not a guaranteed drop-in replacement for MariaDB. The [Azure Database for MariaDB managed service retired on 19 September 2025](https://learn.microsoft.com/en-us/lifecycle/announcements/azure-products-retirement-september-2025). That does not mean MariaDB software retired.
+[Managed Instance](https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/sql-managed-instance-paas-overview) has an instance-shaped contract. If an existing application depends on SQL Agent, linked servers or cross-database features, investigate it. Microsoft's [SQL decision tree](https://learn.microsoft.com/en-us/azure/azure-sql/azure-sql-decision-tree?view=azuresql) helps identify those dependencies.
 
-A WordPress site using MariaDB should be tested against MySQL Flexible Server. Check plugins, schema, SQL behaviour, character sets, drivers, backups and migration tooling. The application label helps identify a compatibility exercise; it does not prove the destination will work.
+Do not translate “near-complete compatibility” into “nothing to test”. Check each feature against the target.
 
-## Choose Cosmos DB for its access pattern, not because data is JSON
+Need operating-system access, file-system control or a specific SQL Server version? [SQL Server on Azure VMs](https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview?view=azuresql) exposes that control, with more operational ownership. Optional automation does not remove responsibility for patching, backups and failover.
 
-JSON can live in relational databases as well as document databases. Azure Cosmos DB for NoSQL is a document-oriented distributed database with explicit partitioning and consistency choices. Its [consistency options](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) trade among consistency, availability and latency. Its [partitioning model](https://learn.microsoft.com/en-us/azure/cosmos-db/partitioning) makes data distribution and query shape important design work.
+An existing SQL Server VM is not, by itself, a reason to choose another VM.
 
-Global users do not automatically require writes in multiple regions. Measure client locations and latency targets, then decide whether reads, writes or both need to be local. Design partition keys, transaction boundaries, indexing, consistency, region placement and throughput together. Cross-record business transactions can still justify a relational design.
+## PostgreSQL and MySQL are engine choices
 
-MongoDB applications need a separate compatibility exercise. Microsoft’s [release notes](https://learn.microsoft.com/en-us/azure/documentdb/release-notes) identify Azure DocumentDB as the renamed vCore-based Cosmos DB for MongoDB offering. RU-based Cosmos DB for MongoDB remains separate.
+[PostgreSQL Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/overview) provides managed PostgreSQL. That matters when the application already depends on PostgreSQL behaviour or extensions.
 
-A familiar driver or wire protocol is not complete feature parity. Check the [DocumentDB version-specific compatibility reference](https://learn.microsoft.com/en-us/azure/documentdb/compatibility-query-language) and the [RU-based MongoDB 4.2 feature matrix](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/feature-support-42) for required commands, aggregations and transaction restrictions. Do not apply one API version’s matrix to every offering.
+Name the required extension. Check the [allow-list](https://learn.microsoft.com/en-us/azure/postgresql/extensions/how-to-allow-extensions), target version and configuration. “Supports extensions” is not evidence that a particular dependency will work.
 
-## Some data belongs in a different kind of store
+[MySQL Flexible Server](https://learn.microsoft.com/en-us/azure/mysql/flexible-server/overview) is managed MySQL Community Edition. It is relational too, but that does not make SQL Server, PostgreSQL and MySQL interchangeable.
 
-A file archive may need Blob Storage and no database at all. A cache such as Azure Managed Redis can reduce pressure on a durable store, but needs an explicit source of truth, expiry and invalidation strategy. [Azure Cache for Redis retirement dates differ by tier](https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/retirement-faq); check the notice rather than selecting a legacy tier by habit.
+For a migration, inventory the source version, SQL dialect, procedures, triggers, drivers, privileges and vendor support. Include the time available for cutover.
 
-For telemetry, compare time-window analytical queries with Azure Data Explorer or Fabric Eventhouse. A timestamp in an otherwise transactional record is not a reason to introduce an analytics platform.
+Then test representative reads and writes, not just whether a connection opens. Retaining the current database is also a valid outcome when nothing justifies moving it.
 
-For document retrieval, Azure AI Search may provide a derived index. A retrieval-augmented generation (RAG) application might use object storage for original files, a database for transactional application state and an index for retrieval, but only where each role is required. “AI” alone does not require vector search.
+## A practical example: WordPress using MariaDB
 
-![The actual Navigator architecture view separating authoritative files and transactional state from the derived search index, with synchronisation and recovery boundaries.](../screenshots/rag-architecture-light-1440.png)
+Suppose you are assessing a WordPress installation whose database is MariaDB. This is a worked example, not a claim about a real customer.
 
-*An illustrative multi-store result from the working application. Separate stores do not become transactionally consistent merely because the application uses them together.*
+The important distinction is what retired. Microsoft [retired the Azure Database for MariaDB managed service on 19 September 2025](https://learn.microsoft.com/en-us/lifecycle/announcements/azure-products-retirement-september-2025). That notice did not retire the MariaDB engine everywhere.
 
-Define how source updates reach the index, how long results can lag, how failures are retried and how an index is rebuilt. For a cache, define what happens when entries expire or Redis is unavailable. Keep authoritative records outside derived-state failure boundaries.
+MySQL Flexible Server is a candidate to assess, not a promise of a drop-in replacement.
 
-## A practical comparison
+1. Identify the actual source engine/version and hosting arrangement. Service retirement does not establish that every MariaDB installation must migrate.
+2. Inventory schema, SQL modes, collations, plugins, drivers and scheduled tasks. Check the application's and plugins' supported database contracts.
+3. Restore a backup into an isolated test target. Exercise publishing, account changes, plugin workflows and representative queries. Compare behaviour and inspect errors.
+4. Test backup/restore, cutover time and rollback before deciding the production move. Record what has and has not passed.
 
-| Start here when… | Candidate to assess | Do not assume… |
+“It runs WordPress” starts the compatibility exercise. It does not finish it.
+
+## Cosmos DB: ask about access and distribution
+
+JSON alone is not a reason to select Cosmos DB. [SQL Database supports JSON alongside relational data](https://learn.microsoft.com/en-us/sql/relational-databases/json/json-data-sql-server?view=azuresqldb-current), and [PostgreSQL has json/jsonb](https://www.postgresql.org/docs/current/datatype-json.html). Check the exact feature and engine version.
+
+Cosmos DB for NoSQL becomes worth assessing when document access patterns and distribution requirements justify it. Its [partitioning](https://learn.microsoft.com/en-us/azure/cosmos-db/partitioning) and [consistency](https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels) choices are design work, not boxes to ignore.
+
+Global users do not automatically require global writes. Measure where reads and writes originate and what latency is acceptable. Relational alternatives can remain appropriate when joins, transactions or a retained engine contract matter.
+
+MongoDB clients need their own assessment. [Azure DocumentDB is the renamed vCore-based offering](https://learn.microsoft.com/en-us/azure/documentdb/release-notes); RU-based Cosmos DB for MongoDB remains separate.
+
+Check [DocumentDB's query-language compatibility](https://learn.microsoft.com/en-us/azure/documentdb/compatibility-query-language) and the [specific RU API matrix](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/feature-support-42). A familiar driver does not establish feature parity.
+
+## Sometimes another store fits better
+
+A file archive may need Blob Storage and no database. A regenerable cache may use Managed Redis while an existing database remains authoritative. Cache-aside needs explicit expiry and invalidation; it [does not guarantee consistency](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside).
+
+Telemetry queries may justify Data Explorer or Fabric Eventhouse. A timestamp on an order does not turn the application into an analytics workload.
+
+Search and AI retrieval need the same discipline. Microsoft's [vector-search selection guide](https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/vector-search) starts by considering the existing database. Test whether it can meet the actual retrieval requirement before adding another store.
+
+A separate managed index can be justified for multi-source retrieval or hybrid ranking when indexing lag is acceptable. “AI” is not a requirement for a universal vector database.
+
+![The genuine multi-store diagram showing a retained PostgreSQL store, original files and a derived retrieval index with labelled connections.](../screenshots/architecture-light-1440.png)
+
+*The local application shows ownership and failure boundaries. The arrows are responsibilities to design, not an implemented synchronisation mechanism.*
+
+## A shortlist, not a league table
+
+| Requirement to investigate | Start by assessing | Keep open |
 |---|---|---|
-| A new application needs relational transactions | Azure SQL Database; PostgreSQL Flexible Server | A programming language selects an engine |
-| SQL Server instance dependencies must be preserved | Managed Instance; SQL Server on VMs if OS or version control is required | Every SQL Server feature behaves identically across services |
-| The application needs PostgreSQL or MySQL | PostgreSQL Flexible Server or MySQL Flexible Server | Extensions, plugins or SQL behaviour are universal |
-| Document access patterns have confirmed distribution needs | Cosmos DB for NoSQL or a validated MongoDB-compatible option | JSON, global users or a compatible driver settles the choice |
-| The need is files, search, cache or analytics | Blob Storage, AI Search, Managed Redis or analytical services | Each is an OLTP database or system of record |
+| New relational business records | SQL Database or PostgreSQL | Engine contract and transactions |
+| SQL Server instance dependencies | Managed Instance | Exact feature compatibility |
+| OS or specific SQL Server version control | SQL Server on VMs | Maintenance and recovery ownership |
+| Existing PostgreSQL/MySQL contract | The matching Flexible Server | Versions, extensions and migration tests |
+| Distributed document access | Cosmos DB for NoSQL | Partitioning, consistency and relational JSON alternatives |
+| Files, cache, retrieval or telemetry | The corresponding specialised role | Source ownership and independent failure |
 
-## Write down what “reliable” means
+## Introducing Azure Database Navigator
 
-Recovery Point Objective (RPO) is how much recent data the business can afford to lose. Recovery Time Objective (RTO) is how long it can be without the service. Put both in writing, then verify backup retention, restore testing, high availability and regional recovery for the exact tier and region. High availability is not a substitute for backups or disaster recovery. Read replicas alone are not a complete recovery strategy.
+I built [Azure Database Navigator](https://github.com/preciousajuru/azure-database-navigator) to make those questions easier to organise.
 
-Do the same for encryption, customer-managed keys, private networking, residency and named compliance controls. No service label is a compliance guarantee.
+It asks about workload, persistence, data shape, access patterns, existing engines and required data roles. Migration, retrieval and record-model questions appear when relevant. “Not sure” stays unknown.
 
-Compare cost drivers rather than invented totals: compute, storage, throughput, backups, networking, replicas, licensing and operational effort. Collect measured size, growth and concurrency before selecting capacity or a purchasing model.
+It returns a qualified shortlist, a role-based architecture, more questions, or no new database when none is implied. Each candidate has a reason and validation gates. You can inspect the applied rule IDs and official evidence, explore structured profiles and compare common dimensions.
 
-There is no universal “best Azure database”. There is a shortlist that fits a workload, a set of compatibility tests and configuration decisions still to make. [Azure Database Navigator](https://github.com/preciousajuru/azure-database-navigator) turns those inputs into an explainable starting point. Its recommendations show evidence, validation gates and unresolved requirements without hidden scores. Use it to organise engineering review, not replace it.
+There are no scores, guessed prices or compatibility guarantees. It does not select capacity, configure Azure or execute a migration. Answers stay in browser memory; only the theme preference persists.
+
+The screenshots here show the working local build, not a deployed website. The [Compute Navigator](https://preciousajuru.github.io/azure-compute-navigator/) is its separate companion for choosing where the application runs.
+
+## The shortlist is the beginning
+
+Before production, measure the workload. Review [queries, indexes and network round trips](https://learn.microsoft.com/en-us/azure/azure-sql/database/performance-guidance?view=azuresql), pooling and hot partitions. More advertised scale is not proof of better application performance.
+
+Write down recovery objectives. Test restores and failover. Check region, networking, identity, encryption and cost against the exact configuration. Replicas and caches can lag; do not assume every read sees the latest write.
+
+The useful question is not “Which Azure database is best?”
+
+It is “Which options fit this application, and what evidence would make us choose between them?”
+
+Start there. The product names become much easier to sort out.
 
 ---
 
-Azure Database Navigator is an independent educational project, not affiliated with, endorsed by or an official product of Microsoft. Service features, pricing, availability and lifecycle information can change; confirm current documentation for your deployment. The screenshots show the actual local build, not a deployed website.
+This is an independent educational project, not affiliated with or endorsed by Microsoft. Features, availability and lifecycle can change; verify current official documentation before deployment. The screenshots show the application running locally, not a deployed website.
 
-Original article by Precious Ajuru, licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). Microsoft product names and documentation remain subject to their owners’ terms.
+Original article by Precious Ajuru, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Microsoft product names and documentation remain subject to their owners' terms.

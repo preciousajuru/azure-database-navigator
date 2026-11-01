@@ -30,6 +30,7 @@ npm run test:browser
 `npm run check` rejects missing evidence, invalid fixture answers, incomplete results, unjustified hard exclusions and evidence reviews older than 180 days. A stale date must trigger re-verification, not an automatic date bump. The build rejects missing pages, image files and anchors, duplicate anchors, and raw Markdown links in published pages.
 
 Edit the authoritative article in `docs/article.md`. All published documentation and portable article copies are generated. Regenerate screenshots with `npm run screenshots`, inspect the real captures, and rebuild afterwards. Do not replace screenshots with illustrative mocks.
+The public-document allow-list excludes editorial/internal preparation drafts. Registered external evidence URLs are checked across all documentation; external liveness is a separate network-dependent `node scripts/check-external-links.mjs` review. Keep the generated source table tied to the JavaScript register. All published documentation and portable article copies are generated. Regenerate screenshots with `npm run screenshots`, inspect the real captures, and rebuild afterwards. Do not replace screenshots with illustrative mocks.
 
 The site is static and client-only. Assessment answers remain in browser memory. Do not add telemetry, a backend, credentials, an external API or runtime CDN without an explicit product decision and documentation.
 

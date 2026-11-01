@@ -379,7 +379,7 @@ details li { margin: 4px 0; }
 .explorer-tools label { display: grid; gap: 6px; }
 .explorer-tools .small-note { margin: 0 0 10px; }
 .search-field input { font-weight: 400; }
-.service-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.service-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
 .service-card { display: flex; flex-direction: column; }
 .service-card > p { color: var(--ink-muted); font-size: 12px; }
 .service-card .service-facts { grid-template-columns: 1fr; }

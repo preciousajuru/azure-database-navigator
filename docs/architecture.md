@@ -36,6 +36,8 @@ Six families distinguish relational, document/distributed, caching, object/file,
 
 `npm ci` installs pinned build/test tools. `npm run build` cleans only the generated `dist/` directory, copies runtime assets and actual screenshots, renders original Markdown documentation using `marked`, and creates portable article copies.
 
+Only the public-document allow-list in `scripts/publication.mjs` is rendered. LinkedIn, publication checklist and impact template remain repository-only preparation documents and never enter `dist/`. The generated source table comes directly from `src/data/sources.js`, preventing stale duplicate hub URLs.
+
 The authoritative article is [article.md](article.md). Its generated site version is `dist/docs/article.html`. `dist/publication/article.md` retains relative screenshot references for an export bundle; `dist/publication/article.html` embeds images and CSS so it can be moved independently.
 
 Build-time link validation checks local HTML references and anchors, including image files. Missing targets, duplicate anchors, unexpected URL schemes and published raw-Markdown links fail the build. External links are not fetched automatically at build time; that would make builds network-dependent and would not establish technical accuracy.

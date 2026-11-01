@@ -5,7 +5,7 @@ import { services, serviceById } from '../src/data/services.js';
 import { sourceById } from '../src/data/sources.js';
 import { families, familyFor } from '../src/data/families.js';
 import { profileFor, profileLabels } from '../src/data/profiles.js';
-import { comparisonRows } from '../src/data/comparison.js';
+import { comparisonRows, capabilityLabels } from '../src/data/comparison.js';
 import { guidanceFor } from '../src/data/performance.js';
 import { evaluate } from '../src/logic/recommendations.js';
 
@@ -28,6 +28,7 @@ test('family tokens are implemented and meet text and diagram line contrast in b
   assert.ok(contrast('#58687b', '#ffffff') >= 3);
   assert.ok(contrast('#b0bdca', '#18222e') >= 3);
   assert.ok(services.every((service) => familyFor(service)));
+  assert.ok(services.every((service) => Object.keys(service.capabilities).every((key) => capabilityLabels[key])));
   assert.equal(familyFor(serviceById['table-storage']).id, 'distributed');
   assert.equal(familyFor(serviceById.onelake).id, 'objects');
 });

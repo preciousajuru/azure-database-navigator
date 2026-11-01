@@ -4,9 +4,9 @@ An independent, evidence-led educational guide to choosing data stores and datab
 
 **Status:** implemented and locally verified; GitHub Pages has not been enabled or deployed. The images below are genuine captures of the local build, not deployment evidence. Technical information was reviewed on **1 November 2026**.
 
-![Azure Database Navigator workload-first assessment in the light theme.](screenshots/assessment-light-1440.png)
+![An active relational access-pattern answer during the locally running assessment.](screenshots/assessment-midflow-light-1024.png)
 
-![The same assessment in the dark theme on a 375 px mobile viewport.](screenshots/assessment-dark-375.png)
+![A genuine SQL Server migration shortlist in the dark theme on a 375 px mobile viewport.](screenshots/result-dark-375.png)
 
 ## What it helps distinguish
 
@@ -47,7 +47,7 @@ Chromium workflows run under `/azure-database-navigator/` at 375, 768, 1024 and 
 
 `npm run screenshots` captures actual Chromium renders into `screenshots/` using an explicit preview-only bootstrap. Run `npm run build` afterwards to create and validate the complete publication build. Screenshots are not mocks; see [capture provenance](docs/screenshots.md).
 
-![A multi-store result distinguishing authoritative records/files from a derived search index and its failure boundaries.](screenshots/rag-architecture-light-1440.png)
+![A diagram distinguishing retained authoritative records and original files from a derived search index and its failure boundaries.](screenshots/architecture-light-1440.png)
 
 ## Decision method and evidence
 
@@ -65,7 +65,7 @@ The result is a primary candidate, qualified shortlist, evidence-justified multi
 - [Unpublished LinkedIn announcement draft](docs/linkedin-announcement.md).
 - [Community impact template](docs/community-impact-template.md).
 
-The build renders documentation to `dist/docs/*.html`, with stable heading anchors and local link/image validation. It also produces `dist/publication/article.md` and a portable, standalone `dist/publication/article.html` containing embedded screenshots and styling. Use the Markdown and actual image files for Medium, or the portable HTML for a personal site. Edit only `docs/article.md`, then rebuild; generated copies are not separate editorial sources.
+The build renders only allow-listed public documentation to `dist/docs/*.html`, with stable heading anchors and local link/image validation. It also produces `dist/publication/article.md` and a portable, standalone `dist/publication/article.html` containing embedded screenshots and styling. Use the Markdown and actual image files for Medium, or the portable HTML for a personal site. Edit only `docs/article.md`, then rebuild; generated copies are not separate editorial sources.
 
 The announcement remains unpublished and makes no live-site or impact claim. Public application links and deployment-dependent publication checks remain pending until separately authorised deployment.
 

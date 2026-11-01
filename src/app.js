@@ -174,7 +174,7 @@ function renderResults(result) {
       ${service.configurationConsiderations?.length ? `<details><summary>Configuration questions</summary><ul>${service.configurationConsiderations.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></details>` : ''}
       ${service.caveats.length ? `<details><summary>Trade-offs and remaining work</summary><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></details>` : ''}
       ${reviewDetails(service)}
-      <div class="capability-list">${capEntries.map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(name.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`))}</span>${capabilityStatus(value.status)}</div>`).join('')}</div>
+      <div class="capability-list">${capEntries.map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(capabilityLabels[name])}</span>${capabilityStatus(value.status)}</div>`).join('')}</div>
       <div class="card-actions"><button class="button button-small" data-action="compare-add" data-service="${escapeHTML(service.id)}">Add to compare</button></div>
     </article>`;
   }).join('');
@@ -214,7 +214,7 @@ function serviceCard(service, compact = false) {
     <p>${escapeHTML(service.summary)}</p>
     <dl class="service-facts"><div><dt>Model</dt><dd>${escapeHTML(service.model)}</dd></div><div><dt>API / protocol</dt><dd>${escapeHTML(service.api)}</dd></div></dl>
     ${service.lifecycle ? `<p class="lifecycle-note">${escapeHTML(service.lifecycle === 'retired-service' ? 'Retired service' : 'Retirement path')} · not recommended for new deployments</p>` : ''}
-    ${!compact ? `<details><summary>Capabilities and caveats</summary><div class="capability-list">${Object.entries(service.capabilities).map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(name.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`))}<small>${value.condition ? escapeHTML(value.condition) : ''}</small></span>${capabilityStatus(value.status)}</div>`).join('')}</div><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul><div class="source-list">${sourceLinks(service.sourceIds)}</div></details>` : ''}
+    ${!compact ? `<details><summary>Capabilities and caveats</summary><div class="capability-list">${Object.entries(service.capabilities).map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(capabilityLabels[name])}<small>${value.condition ? escapeHTML(value.condition) : ''}</small></span>${capabilityStatus(value.status)}</div>`).join('')}</div><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul><div class="source-list">${sourceLinks(service.sourceIds)}</div></details>` : ''}
     ${!compact ? reviewDetails(service) : ''}
     <label class="compare-toggle"><input type="checkbox" data-action="compare-toggle" data-service="${escapeHTML(service.id)}" ${selected ? 'checked' : ''} ${!selected && state.compare.size >= 3 ? 'disabled' : ''}><span>${selected ? 'In comparison' : state.compare.size >= 3 ? 'Comparison full — remove a service first' : 'Add to compare'}</span></label>
   </article>`;

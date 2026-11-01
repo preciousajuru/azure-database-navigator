@@ -1,10 +1,12 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Marked } from 'marked';
 import { validateLocalLinks } from './links.mjs';
 import { evidenceLinkIssues } from './validation.mjs';
 import { sources } from '../src/data/sources.js';
+import { publicDocs } from './publication.mjs';
+import { sourceRegisterTable } from './source-register.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'dist');
@@ -45,10 +47,11 @@ function page(title, content, stylesheet = '../styles.css', extra = '') {
 }
 
 await mkdir(path.join(output, 'docs'));
-for (const name of await readdir(path.join(root, 'docs'))) {
-  if (!name.endsWith('.md')) continue;
+for (const name of publicDocs) {
   if (preview && name === 'article.md') continue;
-  const markdown = await readFile(path.join(root, 'docs', name), 'utf8');
+  const markdown = await readFile(path.join(root, 'docs', name), 'utf8') + (name === 'sources.md' ? sourceRegisterTable() : '');
+  const issues = evidenceLinkIssues(markdown, sources);
+  if (issues.length) throw new Error(`${name}: ${issues.join('\n')}`);
   const { html, title } = renderMarkdown(markdown);
   const articleMeta = name === 'article.md' ? `<p class="eyebrow">DATABASE DECISIONS · ${Math.ceil(markdown.split(/\s+/).length / 230)} MIN READ</p>` : '';
   await writeFile(path.join(output, 'docs', name.replace(/\.md$/, '.html')), page(title, articleMeta + html));

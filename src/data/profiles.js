@@ -183,7 +183,7 @@ const neighbour = {
 
 export function profileFor(service) {
   const detail = details[service.id];
-  const sourceIds = [...new Set([...service.sourceIds, ...(detail ? [detail.source, ...detail.extraSources] : [])])];
+  const sourceIds = detail ? [detail.source] : service.sourceIds;
   const profile = {
     whatItIs: entry(service.summary, sourceIds, 'supported'),
     model: entry(service.model, sourceIds, 'supported'),
@@ -195,7 +195,8 @@ export function profileFor(service) {
   };
   for (const key of ['typicalWorkloads', 'migrationFit', 'compatibility', 'operations', 'scaling', 'recovery', 'networking', 'costs']) {
     const text = detail?.[key];
-    profile[key] = text ? entry(text, sourceIds, text.startsWith('Unknown') ? 'unknown' : 'conditional') : entry(`Unknown — verification required for ${service.name}: ${profileLabels[key].toLowerCase()}. The model/role overview does not establish configuration-specific behaviour.`, sourceIds, 'unknown');
+    const fieldSources = detail && key === 'compatibility' ? [...new Set([...sourceIds, ...detail.extraSources])] : sourceIds;
+    profile[key] = text ? entry(text, fieldSources, text.startsWith('Unknown') ? 'unknown' : 'conditional') : entry(`Unknown — verification required for ${service.name}: ${profileLabels[key].toLowerCase()}. The model/role overview does not establish configuration-specific behaviour.`, sourceIds, 'unknown');
   }
   return profile;
 }

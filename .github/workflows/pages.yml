@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    if: inputs.confirm_deployment
+    if: github.ref == 'refs/heads/main' && inputs.confirm_deployment
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,7 +39,7 @@ jobs:
           path: dist
 
   deploy:
-    if: inputs.confirm_deployment
+    if: github.ref == 'refs/heads/main' && inputs.confirm_deployment
     needs: build
     environment:
       name: github-pages

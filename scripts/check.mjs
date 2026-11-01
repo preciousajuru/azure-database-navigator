@@ -7,7 +7,7 @@ import { ruleById } from '../src/data/rules.js';
 import { serviceById } from '../src/data/services.js';
 import { evaluate } from '../src/logic/recommendations.js';
 import { verificationIssue, resultIssues, evidenceLinkIssues, isHubSource } from './validation.mjs';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { profileFor, profileLabels } from '../src/data/profiles.js';
 import { familyFor } from '../src/data/families.js';
 import { performanceGuidance } from '../src/data/performance.js';
@@ -71,7 +71,9 @@ for (const service of services) {
   }
 }
 
-errors.push(...evidenceLinkIssues(await readFile(new URL('../docs/article.md', import.meta.url), 'utf8'), sources));
+for (const name of await readdir(new URL('../docs/', import.meta.url))) {
+  if (name.endsWith('.md')) errors.push(...evidenceLinkIssues(await readFile(new URL(`../docs/${name}`, import.meta.url), 'utf8'), sources).map((issue) => `${name}: ${issue}`));
+}
 for (const entry of performanceGuidance) for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Missing performance source: ${id}`);
 for (const recordModel of ['relational', 'documents', 'existing', 'unknown']) {
   const result = evaluate({ workload: 'mixed', dataShape: 'mixed', dataKinds: ['records', 'files', 'search', 'cache'], durable: 'yes', recordModel, retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok' });

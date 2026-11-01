@@ -63,7 +63,7 @@ function evaluateRoles(answers) {
       id: 'records', role: 'System of record', kind: 'retained',
       label: 'Your existing authoritative store (retained; not selected or migrated by this tool)',
       serviceIds: [],
-      boundary: 'Retain its current record ownership. Verify its actual engine, version, recovery, access controls and retrieval capabilities; no migration is inferred.'
+      boundary: `${serviceById[answers.existingService] ? `Reported existing platform: ${serviceById[answers.existingService].name}. ` : ''}Retain its current record ownership. Verify its actual engine, version, recovery, access controls and retrieval capabilities; no migration is inferred.`
     };
   } else if (answers.durable === 'yes' && ['relational', 'documents'].includes(answers.recordModel)) {
     const result = evaluate({

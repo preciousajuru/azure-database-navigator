@@ -1,11 +1,37 @@
-# Unpublished announcement draft
+# LinkedIn announcement — unpublished draft
 
-I’ve been working on Azure Database Navigator, an independent guide to choosing data stores and database services on Azure.
+## Post text
 
-The idea is to start with the workload—not a favourite product name—and make the trade-offs visible: SQL Server compatibility, PostgreSQL extension checks, document access patterns, caches versus systems of record, and the times a files or search service is a better fit than a database.
+Choosing where an application runs is one decision.
 
-It is a static, browser-only project. Recommendations are deterministic, sourced and deliberately cautious: if a capability depends on a tier, region, version or configuration, the answer should say so. It does not estimate prices, promise compatibility or replace engineering review.
+Choosing where its data lives is another.
 
-The project is prepared for publication, but this draft is not yet a claim that the site or article is live. Once those are verified, I’ll share the repository, site and companion article here.
+Azure SQL Database, PostgreSQL, MySQL and Cosmos DB can all enter the same conversation. But they do not have the same engine contracts, transaction boundaries or operating models.
 
-Feedback and evidence-backed corrections will be welcome through the project repository.
+And not every storage problem needs another database.
+
+Sometimes you need files. Sometimes a cache beside the database you already have. Sometimes a search index that can be rebuilt from the originals.
+
+I built Azure Database Navigator to help organise that decision.
+
+It starts with the workload and access patterns. It keeps existing-engine requirements visible. The results explain why an option appears, what the official sources establish and what still needs testing.
+
+You can explore the profiles, compare services and inspect the decision rules. Multi-store results show which data is authoritative and which copies are cached or indexed.
+
+No hidden scores. No guessed prices. No promise that a familiar driver makes a migration compatible.
+
+The project is working locally. Evidence-backed corrections are welcome.
+
+Start with the data. Then choose the database.
+
+## Before posting — not part of the post
+
+This draft is not published. Obtain editorial and publication approval before posting. Push the reviewed code before sharing a repository link as an implementation deliverable.
+
+After authorised deployment, verify the site and article return HTTP 200, inspect the published pages, replace the local-only sentence if appropriate, and add only verified links to the post text. Do not claim adoption, reach or customer outcomes without evidence.
+
+| Link field | Readiness |
+|---|---|
+| Public repository | Populate after authorised push and verification |
+| Navigator website | Populate only after authorised, verified deployment |
+| Companion article | Populate only after authorised publication |
