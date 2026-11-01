@@ -9,7 +9,7 @@ const ids = (result) => result.candidates.map((candidate) => candidate.serviceId
 for (const scenario of scenarios) {
   test(`scenario: ${scenario.title}`, () => {
     const result = evaluate(scenario.answers);
-    for (const id of scenario.expected) assert.ok(ids(result).includes(id), `${id} missing from ${result.kind}`);
+    assert.deepEqual(ids(result), scenario.expected, `${scenario.id} contains missing or unjustified stores`);
     for (const id of ids(result)) {
       assert.notEqual(serviceById[id].lifecycle, 'retired-service', `${id} is retired`);
       assert.notEqual(serviceById[id].lifecycle, 'retirement-path', `${id} is on a retirement path`);
@@ -91,7 +91,7 @@ test('Cassandra engine and Cassandra API remain separate options with a version 
 });
 
 test('RAG separates object source, search index and optional durable application state', () => {
-  const result = evaluate({ workload: 'search', dataShape: 'search', accessPattern: 'full-text', durable: 'yes', geography: 'single-region', recovery: 'important' });
+  const result = evaluate({ workload: 'search', dataShape: 'search', accessPattern: 'full-text', sourceFiles: 'yes', durable: 'yes', recordModel: 'relational', geography: 'single-region', recovery: 'important' });
   assert.equal(result.kind, 'multi-store');
   assert.deepEqual(ids(result), ['blob-storage', 'ai-search', 'azure-sql-db']);
   assert.ok(result.architecture.some((item) => item.serviceId === 'ai-search' && /indexing lag/.test(item.boundary)));
@@ -99,7 +99,7 @@ test('RAG separates object source, search index and optional durable application
 });
 
 test('cache is never represented as the durable record store', () => {
-  const result = evaluate({ workload: 'cache', dataShape: 'cache', durable: 'yes', geography: 'single-region', recovery: 'basic' });
+  const result = evaluate({ workload: 'cache', dataShape: 'cache', durable: 'yes', recordModel: 'relational', geography: 'single-region', recovery: 'basic' });
   assert.equal(result.kind, 'multi-store');
   assert.deepEqual(ids(result), ['managed-redis', 'azure-sql-db']);
   assert.equal(result.architecture.find((item) => item.serviceId === 'managed-redis').role, 'Cache');
@@ -160,4 +160,59 @@ test('recommendations have no numeric score and explain their source trail', () 
   assert.ok(result.candidates.every((item) => item.reason.length > 10));
   assert.ok(result.sourceIds.every((id) => typeof id === 'string'));
   assert.ok(result.ruleIds.includes('relational-integrity'));
+});
+
+test('retaining an existing store does not imply an Azure migration', () => {
+  const result = evaluate({ workload: 'migration', persistence: 'durable', dataShape: 'relational', migrationIntent: 'keep', engine: 'sqlserver' });
+  assert.equal(result.kind, 'no-database-needed');
+  assert.deepEqual(ids(result), []);
+  assert.ok(result.ruleIds.includes('keep-existing-store'));
+  assert.match(result.decisions[0].outcome, /Retain the existing database/);
+});
+
+test('unknown cache and search source roles do not add new authoritative stores', () => {
+  const cache = evaluate({ workload: 'cache', persistence: 'transient', dataShape: 'cache', durable: 'unknown' });
+  assert.deepEqual(ids(cache), ['managed-redis']);
+  assert.notEqual(cache.kind, 'multi-store');
+  assert.ok(cache.unknowns.some((question) => /source of truth/.test(question)));
+  const search = evaluate({ workload: 'search', persistence: 'durable', dataShape: 'search', durable: 'unknown', sourceFiles: 'unknown' });
+  assert.deepEqual(ids(search), ['ai-search']);
+  assert.notEqual(search.kind, 'multi-store');
+});
+
+test('confirmed search and cache roles reuse an existing PostgreSQL candidate', () => {
+  for (const role of ['search', 'cache']) {
+    const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: role, engine: 'postgres', durable: 'yes', sourceFiles: 'no' });
+    assert.ok(ids(result).includes('postgres-flex'));
+    assert.ok(!ids(result).includes('azure-sql-db'));
+    assert.ok(result.architecture.some((node) => node.role === 'System of record' && node.serviceId === 'postgres-flex'));
+  }
+});
+
+test('high write activity alone does not turn relational OLTP into event analytics', () => {
+  const result = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'relational', operations: 'high-ingest' });
+  assert.deepEqual(ids(result), ['azure-sql-db', 'postgres-flex']);
+});
+
+test('consistency and transaction scope are not interchangeable', () => {
+  const result = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'documents', accessPattern: 'document-aggregate', constraints: ['hard-consistency'], consistency: 'aggregate-atomic' });
+  assert.deepEqual(ids(result), ['cosmos-nosql']);
+  assert.match(serviceById['cosmos-nosql'].capabilities.transactionalBoundary.condition, /logical partition/);
+  const business = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'documents', accessPattern: 'document-aggregate', consistency: 'business-atomic' });
+  assert.ok(ids(business).includes('azure-sql-db'));
+});
+
+test('durable application state alone does not select SQL or replace an existing source', () => {
+  for (const recordModel of ['unknown', 'documents', 'existing']) {
+    const result = evaluate({ workload: 'cache', persistence: 'durable', dataShape: 'cache', durable: 'yes', recordModel });
+    assert.deepEqual(ids(result), ['managed-redis']);
+    assert.ok(result.unknowns.some((question) => /authoritative state model/.test(question)));
+  }
+});
+
+test('explicit mixed search and cache roles retain all responsibility boundaries', () => {
+  const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: 'mixed', dataKinds: ['search', 'cache', 'records'], engine: 'postgres', durable: 'yes', sourceFiles: 'no' });
+  assert.equal(result.kind, 'multi-store');
+  assert.deepEqual(ids(result), ['postgres-flex', 'ai-search', 'managed-redis']);
+  assert.deepEqual(result.architecture.map((node) => node.serviceId), ['postgres-flex', 'ai-search', 'managed-redis']);
 });

@@ -1,6 +1,6 @@
 # Documentation and article licence
 
-Original prose in `docs/` and the companion article in `docs/article.html` are © 2026 Precious Ajuru and licensed under the [Creative Commons Attribution 4.0 International licence (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+Original prose in `docs/`, the companion article source in `docs/article.md`, its generated copies, and original application captures in `screenshots/` are © 2026 Precious Ajuru and licensed under the [Creative Commons Attribution 4.0 International licence (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 
 Suggested attribution: “Azure Database Navigator documentation and article by Precious Ajuru, licensed under CC BY 4.0.”
 

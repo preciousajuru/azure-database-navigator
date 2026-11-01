@@ -16,10 +16,30 @@ export const sources = [
     title: 'Data store considerations',
     publisher: 'Microsoft Learn — Azure Architecture Center',
     url: 'https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/data-stores-getting-started',
-    published: 'Updated 2026-08-25',
+    published: '2025-09-02; updated 2026-10-20',
     verifiedOn: REVIEWED_ON,
     evidence: 'Frames data-store choice around data shape, access patterns, consistency, scale, governance and operational needs.',
     limitation: 'Architecture guidance; validate implementation details against the service documentation.'
+  },
+  {
+    id: 'azure-sql-features',
+    title: 'Compare SQL Database and Managed Instance engine features',
+    publisher: 'Microsoft Learn',
+    url: 'https://learn.microsoft.com/en-us/azure/azure-sql/database/features-comparison?view=azuresql',
+    published: '2026-09-30; updated 2026-10-19',
+    verifiedOn: REVIEWED_ON,
+    evidence: 'Separates native three-part name/cross-database queries from elastic query, and documents feature-specific limitations for SQL Database and Managed Instance.',
+    limitation: 'Some features are conditional or preview; verify the linked details for the target configuration.'
+  },
+  {
+    id: 'cosmos-transactions',
+    title: 'Database transactions and optimistic concurrency control',
+    publisher: 'Microsoft Learn',
+    url: 'https://learn.microsoft.com/en-us/azure/cosmos-db/database-transactions-optimistic-concurrency',
+    published: '2025-07-07; updated 2026-04-27',
+    verifiedOn: REVIEWED_ON,
+    evidence: 'Documents Cosmos DB for NoSQL ACID multi-item transactions with snapshot isolation within a container logical partition.',
+    limitation: 'Do not generalise this scope to another API, cross-partition transactions or cross-service atomic writes.'
   },
   {
     id: 'azure-sql-family',
@@ -146,7 +166,7 @@ export const sources = [
     title: 'Azure Managed Instance for Apache Cassandra overview',
     publisher: 'Microsoft Learn',
     url: 'https://learn.microsoft.com/en-us/azure/managed-instance-apache-cassandra/introduction',
-    published: 'Continuously maintained',
+    published: 'Updated 2026-08-25',
     verifiedOn: REVIEWED_ON,
     evidence: 'Describes a managed native Apache Cassandra deployment and documents support through Cassandra 5.0.',
     limitation: 'Verify current supported versions, regional availability and service status before considering a new deployment.'

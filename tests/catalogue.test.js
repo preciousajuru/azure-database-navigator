@@ -73,3 +73,27 @@ test('every stable rule identifies services/configuration, limitations, sources,
     assert.ok(rule.sourceIds.every((id) => sourceById[id]));
   }
 });
+
+test('no-storage and keep-existing flows skip unnecessary configuration questions', () => {
+  assert.deepEqual(getQuestions({ persistence: 'no' }).map((question) => question.id), ['workload', 'persistence']);
+  const keep = getQuestions({ workload: 'migration', migrationIntent: 'keep' }).map((question) => question.id);
+  assert.ok(!keep.includes('engine') && !keep.includes('recovery') && keep.includes('migrationIntent'));
+});
+
+test('every profile explicitly separates evidence from unresolved review dimensions', () => {
+  for (const service of services) {
+    assert.equal(service.verifiedOn, '2026-11-01');
+    assert.equal(Object.keys(service.reviewDimensions).length, 7);
+    for (const entry of Object.values(service.reviewDimensions)) {
+      assert.ok(entry.sourceIds.every((id) => sourceById[id]));
+      assert.ok(entry.condition || entry.status === 'supported');
+    }
+  }
+  assert.equal(serviceById['azure-sql-db'].capabilities.nativeThreePartNameQueries.status, 'unsupported');
+  assert.equal(serviceById['azure-sql-db'].capabilities.crossDatabaseQueries.status, 'conditional');
+});
+
+test('conditional follow-ups stay after the question that reveals them', () => {
+  const ids = getQuestions({ workload: 'search', dataShape: 'search', durable: 'yes' }).map((question) => question.id);
+  assert.ok(ids.indexOf('recordModel') > ids.indexOf('durable'));
+});

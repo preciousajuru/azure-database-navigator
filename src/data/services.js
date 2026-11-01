@@ -1,3 +1,5 @@
+import { REVIEWED_ON } from './sources.js';
+
 const cap = (status, sourceIds = [], condition = '') => ({ status, sourceIds, condition });
 
 export const services = [
@@ -10,10 +12,11 @@ export const services = [
       relational: cap('supported', ['arch-data-models', 'azure-sql-family']),
       sqlServerDatabaseEngine: cap('supported', ['azure-sql-family']),
       instanceFeatures: cap('conditional', ['azure-sql-decision'], 'Verify each required instance-level feature; several are decision points for Managed Instance or VM.'),
-      crossDatabaseQueries: cap('unsupported', ['azure-sql-decision'], 'The Microsoft decision tree directs workloads requiring cross-database queries to Managed Instance. Verify product feature documentation for the target configuration.')
+      crossDatabaseQueries: cap('conditional', ['azure-sql-features'], 'Native three-part name queries are not supported in SQL Database; elastic query is a separate, limited feature, not equivalent native cross-database behaviour.'),
+      nativeThreePartNameQueries: cap('unsupported', ['azure-sql-features'], 'The official feature matrix marks native cross-database/three-part name queries as unsupported; evaluate elastic query separately.')
     },
     caveats: ['Choose database service first; serverless, provisioned, pools, and service tiers are separate configuration choices.', 'Do not infer a purchasing tier, capacity, or price from this assessment.'],
-    sourceIds: ['azure-sql-family', 'azure-sql-decision', 'arch-data-models']
+    sourceIds: ['azure-sql-family', 'azure-sql-decision', 'azure-sql-features', 'arch-data-models']
   },
   {
     id: 'azure-sql-mi', name: 'Azure SQL Managed Instance', family: 'Relational', kind: 'Managed SQL Server instance',
@@ -87,11 +90,11 @@ export const services = [
     capabilities: {
       document: cap('supported', ['cosmos-overview', 'arch-data-models']),
       configurableConsistency: cap('supported', ['cosmos-consistency']),
-      transactionalBoundary: cap('conditional', ['cosmos-consistency', 'cosmos-partitioning'], 'Read consistency is scoped to a logical partition; design transaction and partition boundaries against API documentation.'),
+      transactionalBoundary: cap('conditional', ['cosmos-transactions'], 'NoSQL multi-item ACID transactions are scoped to a container logical partition; cross-partition and cross-service changes need separate coordination.'),
       globalWrites: cap('conditional', ['cosmos-overview'], 'Global distribution and write-region behaviour depend on account configuration and requirements.')
     },
     caveats: ['JSON alone is not a reason to choose Cosmos DB.', 'Partition key, throughput mode, consistency, regions, request costs and transaction scope require explicit design.'],
-    sourceIds: ['cosmos-overview', 'cosmos-consistency', 'cosmos-partitioning']
+    sourceIds: ['cosmos-overview', 'cosmos-consistency', 'cosmos-partitioning', 'cosmos-transactions']
   },
   {
     id: 'cosmos-mongo-ru', name: 'Azure Cosmos DB for MongoDB (RU-based)', family: 'Document & distributed', kind: 'MongoDB-compatible API offering',
@@ -145,7 +148,7 @@ export const services = [
     summary: 'Managed Redis service to evaluate for cache and in-memory data needs.',
     capabilities: {
       cache: cap('supported', ['arch-data-models', 'managed-redis-overview']),
-      durableSystemOfRecord: cap('unsupported', ['arch-data-models'], 'A cache role does not replace a durable system of record.'),
+      durableSystemOfRecord: cap('conditional', ['managed-redis-overview'], 'The cache architecture does not make Redis the source of truth. Assess any intended authoritative-state use against the service’s actual persistence, recovery and failure behaviour.'),
       clientCompatibility: cap('conditional', ['redis-retirement'], 'Check clustering and client-library requirements for the configured instance.')
     },
     caveats: ['Use with an explicit source-of-truth and cache invalidation/failure strategy when data must be durable.', 'Azure Cache for Redis tiers have retirement dates that vary by tier.'],
@@ -281,6 +284,18 @@ export const services = [
     caveats: ['Basic/Standard/Premium and Enterprise tiers do not share one retirement date.'],
     sourceIds: ['redis-retirement']
   }
-];
+].map((service) => ({
+  ...service,
+  verifiedOn: REVIEWED_ON,
+  reviewDimensions: {
+    versionsAndCompatibility: service.capabilities.featureCompatibility || service.capabilities.requiredExtensions || cap('unknown', service.sourceIds, 'Exact supported versions, driver/dialect behaviour and feature restrictions require the current service-specific matrix.'),
+    transactionsAndConsistency: service.capabilities.transactionalBoundary || cap('unknown', service.sourceIds, 'Confirm actual atomicity, isolation, consistency and concurrency boundaries for the engine/API; a data-model label is not a transaction guarantee.'),
+    scaling: cap('unknown', service.sourceIds, 'Verify compute, storage, throughput, replicas and any scale-out restrictions. No tier, capacity, vCore or RU/s quantity is selected.'),
+    availabilityAndRecovery: cap('unknown', service.sourceIds, 'Check tier/region-specific HA, zone redundancy, backups, retention, PITR and DR; test restore and application failover against RPO/RTO.'),
+    securityAndNetworking: cap('unknown', service.sourceIds, 'Verify Entra versus native authentication, managed identity, keys/encryption, private/hybrid access, RBAC and auditing for this exact service.'),
+    pricingDimensions: cap('unknown', service.sourceIds, 'Review the applicable compute, storage, throughput, backup, transfer, licence and operational charges using current regional prices.'),
+    managementResponsibilities: cap('conditional', service.sourceIds, service.id === 'sql-server-vm' ? 'Microsoft provides Azure infrastructure; the customer plans VM/OS and SQL Server patching, backups, upgrades, HA/DR and database operations.' : 'Verify the service’s managed-platform responsibilities; the customer still owns data/schema, application access, query/index tuning, configuration, monitoring, recovery testing and incident response.')
+  }
+}));
 
 export const serviceById = Object.fromEntries(services.map((service) => [service.id, service]));

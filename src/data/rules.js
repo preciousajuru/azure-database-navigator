@@ -2,6 +2,46 @@ export const RULE_REVIEWED_ON = '2026-11-01';
 
 export const rules = [
   {
+    id: 'keep-existing-store',
+    serviceIds: [],
+    configuration: 'No new Azure platform or migration is selected.',
+    conditions: 'The user explicitly chooses to retain the existing store.',
+    sourceIds: ['arch-data-considerations'],
+    verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'Keeping a store does not verify its lifecycle, compatibility, security or recovery.',
+    test: 'retaining an existing store does not imply an Azure migration'
+  },
+  {
+    id: 'postgres-existing-engine',
+    serviceIds: ['postgres-flex'],
+    configuration: 'Target version, extensions, HA, networking and migration remain verification gates.',
+    conditions: 'The application has an existing PostgreSQL engine contract.',
+    sourceIds: ['postgres-overview', 'postgres-extensions'],
+    verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'An engine match is not proof of complete feature or migration compatibility.',
+    test: 'PostgreSQL extension requirements remain a validation gate'
+  },
+  {
+    id: 'mysql-existing-engine',
+    serviceIds: ['mysql-flex'],
+    configuration: 'Target version, SQL modes, plugins and migration are not assumed.',
+    conditions: 'The workload uses MySQL or requires a MariaDB-to-MySQL compatibility assessment.',
+    sourceIds: ['mysql-overview', 'mariadb-retirement'],
+    verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'MariaDB and MySQL are different engines; compatibility requires testing.',
+    test: 'MariaDB application mapping to MySQL remains conditional and is not engine retirement advice'
+  },
+  {
+    id: 'cassandra-feature-validation',
+    serviceIds: ['cosmos-other-apis', 'cosmos-cassandra'],
+    configuration: 'Compare the API offering with native Cassandra; verify version, topology, operations and migration.',
+    conditions: 'An existing workload has an Apache Cassandra engine/client contract.',
+    sourceIds: ['cosmos-overview', 'cassandra-managed-overview'],
+    verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'A Cassandra API is not the native Cassandra engine or a guarantee of feature parity.',
+    test: 'Cassandra engine and Cassandra API remain separate options with a version gate'
+  },
+  {
     id: 'no-persistent-store',
     serviceIds: [],
     configuration: 'No database or object store is selected.',
@@ -86,7 +126,7 @@ export const rules = [
     serviceIds: ['cosmos-nosql'],
     configuration: 'Partition key, throughput mode, indexing, consistency and region strategy are not configured.',
     conditions: 'A document aggregate/partition-key access pattern or measured multi-region read-latency requirement is stated.',
-    sourceIds: ['cosmos-overview', 'cosmos-consistency', 'cosmos-partitioning'],
+    sourceIds: ['cosmos-overview', 'cosmos-consistency', 'cosmos-partitioning', 'cosmos-transactions'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'JSON alone is insufficient; partitioning, consistency, transactions, throughput and cost remain design work.',
     test: 'JSON syntax without a defined document access pattern is insufficient information'
@@ -96,7 +136,7 @@ export const rules = [
     serviceIds: ['azure-documentdb', 'cosmos-mongo-ru'],
     configuration: 'Offering, API version, commands, drivers and migration plan require separate verification.',
     conditions: 'A workload uses MongoDB drivers/protocol and requires a documented feature-by-feature compatibility check.',
-    sourceIds: ['documentdb-overview', 'cosmos-overview', 'cosmos-mongodb-features'],
+    sourceIds: ['documentdb-release-notes', 'documentdb-mql-compat', 'cosmos-overview', 'cosmos-mongodb-features'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'Wire protocol/client support is not feature parity; Azure DocumentDB is the current name for the vCore-based offering, not a third distinct service.',
     test: 'MongoDB options remain distinct with feature-level validation caveats'
@@ -125,7 +165,7 @@ export const rules = [
     id: 'cache-not-record',
     serviceIds: ['managed-redis', 'azure-sql-db'],
     configuration: 'Cache topology, expiry, invalidation and durable record configuration are not selected.',
-    conditions: 'Cache/transient-state role is explicit; durable record service is added only when requested or unresolved.',
+    conditions: 'Cache/transient-state role is explicit; a new durable record service is added only when explicitly required and an existing candidate does not already fill that role.',
     sourceIds: ['managed-redis-overview', 'arch-data-models'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'Define source of truth, expiry, invalidation, failure and recovery behaviour.',

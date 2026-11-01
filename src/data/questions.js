@@ -24,6 +24,8 @@ export const questions = [
       { value: 'durable', label: 'Yes, durable records or files must be kept' },
       { value: 'transient', label: 'Only short-lived cache or session state is needed' },
       { value: 'no', label: 'No persistent data store is needed' },
+      { value: 'external', label: 'Only read from an external service; no new stored state' },
+      { value: 'processing', label: 'Process data without retaining it' },
       notSure
     ]
   },
@@ -44,6 +46,50 @@ export const questions = [
     ]
   },
   {
+    id: 'dataKinds',
+    title: 'Which data roles are actually present?',
+    help: 'Select only roles this application needs. Mixed workloads do not automatically require separate services.',
+    when: (a) => a.dataShape === 'mixed',
+    multiple: true,
+    options: [
+      { value: 'records', label: 'Business records — customers, orders or application state' },
+      { value: 'documents', label: 'Documents — nested JSON aggregates' },
+      { value: 'files', label: 'Files — images, PDFs or object archives' },
+      { value: 'events', label: 'Events — time-stamped telemetry for analysis' },
+      { value: 'search', label: 'Index — text or similarity retrieval over source data' },
+      { value: 'cache', label: 'Cache — regenerable copies or short-lived state' },
+      notSure
+    ]
+  },
+  {
+    id: 'relationships',
+    title: 'How are the records related?',
+    help: 'A join combines related records; a foreign key protects a relationship. Graph traversal follows chains of relationships.',
+    when: (a) => ['relational', 'documents', 'graph', 'mixed'].includes(a.dataShape),
+    options: [
+      { value: 'keys', label: 'Mostly independent records read by a known key' },
+      { value: 'joins', label: 'Foreign keys, joins and related business records' },
+      { value: 'aggregate', label: 'Nested documents kept together as an aggregate' },
+      { value: 'graph', label: 'Deep or variable relationship traversal' },
+      { value: 'mixed', label: 'Several relationship patterns' },
+      notSure
+    ]
+  },
+  {
+    id: 'consistency',
+    title: 'What must stay consistent when data changes?',
+    help: 'ACID means changes happen together or not at all, preserve rules, handle concurrent work safely and survive a committed write. Confirm the scope, not just the label.',
+    when: (a) => ['relational', 'documents', 'mixed'].includes(a.dataShape),
+    options: [
+      { value: 'business-atomic', label: 'Atomic updates spanning related financial, stock or business records' },
+      { value: 'aggregate-atomic', label: 'Atomic updates within one document or partition-bound aggregate' },
+      { value: 'concurrent', label: 'Concurrent writers need conflict detection or prevention' },
+      { value: 'eventual', label: 'Some lag between writes and reads is acceptable' },
+      { value: 'global-conflicts', label: 'Multiple write regions with explicit conflict-handling requirements' },
+      notSure
+    ]
+  },
+  {
     id: 'accessPattern',
     title: 'How does the application read and change that data?',
     help: 'The query shape, not the file format, helps distinguish storage models.',
@@ -55,6 +101,17 @@ export const questions = [
       { value: 'time-window-scan', label: 'Scan and aggregate events by time window' },
       { value: 'full-text', label: 'Find content by text relevance or similarity' },
       { value: 'object-delivery', label: 'Store, retrieve or serve whole files and objects' },
+      notSure
+    ]
+  },
+  {
+    id: 'migrationIntent',
+    title: 'Does the existing database need to move?',
+    help: 'An existing database is not itself a reason to migrate. Keeping it can be the simpler design.',
+    when: (a) => a.workload === 'migration',
+    options: [
+      { value: 'assess', label: 'Assess an Azure migration or modernisation target' },
+      { value: 'keep', label: 'Keep the existing database; no new store is required' },
       notSure
     ]
   },
@@ -73,6 +130,14 @@ export const questions = [
       { value: 'other', label: 'Another engine or custom client' },
       notSure
     ]
+  },
+  {
+    id: 'migrationDetails',
+    title: 'Which existing-engine dependencies must be preserved?',
+    help: 'Optional inventory for compatibility testing; a version or feature name is not automatically treated as supported.',
+    when: (a) => ['migration', 'mixed'].includes(a.workload) && a.engine && a.engine !== 'unknown',
+    freeText: true,
+    placeholder: 'Source version, drivers/dialect, procedures/functions/triggers, extensions/jobs, cross-database dependencies, admin privileges, vendor support and permissible downtime'
   },
   {
     id: 'constraints',
@@ -126,6 +191,44 @@ export const questions = [
     placeholder: 'For example: current data size, expected growth, peak concurrency'
   },
   {
+    id: 'volume',
+    title: 'What is the approximate data volume?',
+    help: 'A range records an assumption, not a capacity recommendation. Include growth in the optional scale notes.',
+    options: [
+      { value: 'small', label: 'Less than roughly 10 GB' },
+      { value: 'medium', label: 'Roughly 10 GB to 1 TB' },
+      { value: 'large', label: 'Roughly 1 TB to 100 TB' },
+      { value: 'very-large', label: 'More than roughly 100 TB' },
+      notSure
+    ]
+  },
+  {
+    id: 'activity',
+    title: 'How busy is the application?',
+    help: 'Broad ranges are enough here. You do not need IOPS, RU/s, DTU or vCore figures.',
+    options: [
+      { value: 'occasional', label: 'Occasional requests or a small user group' },
+      { value: 'steady', label: 'Steady concurrent use' },
+      { value: 'bursty', label: 'Large peaks, seasonal traffic or uncertain bursts' },
+      { value: 'continuous', label: 'Continuous high-volume activity' },
+      notSure
+    ]
+  },
+  {
+    id: 'priorities',
+    title: 'Which operational priorities need balancing?',
+    help: 'Low administration, low cost, engine control and high availability can conflict. No priority guarantees a price or service-level outcome.',
+    multiple: true,
+    options: [
+      { value: 'low-admin', label: 'Minimise routine platform administration' },
+      { value: 'engine-control', label: 'Keep engine or operating-system control' },
+      { value: 'cost', label: 'Understand cost drivers and avoid unnecessary stores' },
+      { value: 'availability', label: 'Validate availability, restore and incident response' },
+      { value: 'portability', label: 'Preserve engine compatibility or portability' },
+      notSure
+    ]
+  },
+  {
     id: 'geography',
     title: 'What geographic and network needs are confirmed?',
     help: 'Global users do not automatically require multi-region writes. Confirm latency, residency and private-network needs.',
@@ -135,6 +238,7 @@ export const questions = [
       { value: 'multi-region-write', label: 'Writes from multiple regions are a verified requirement' },
       { value: 'residency', label: 'Data must remain in specified locations or jurisdictions' },
       { value: 'private-network', label: 'Private network connectivity is required' },
+      { value: 'hybrid', label: 'Hybrid/on-premises connectivity must be preserved' },
       notSure
     ]
   },
@@ -149,6 +253,8 @@ export const questions = [
       { value: 'private-network', label: 'Private network or restricted public access' },
       { value: 'residency', label: 'Data residency, sovereignty or location restrictions' },
       { value: 'compliance', label: 'A named regulatory or organisational control to verify' },
+      { value: 'identity', label: 'Verify Entra/native authentication, managed identity, RBAC and least privilege' },
+      { value: 'audit', label: 'Verify auditing, secret handling and incident-response controls' },
       notSure
     ]
   },
@@ -180,6 +286,31 @@ export const questions = [
     placeholder: 'For example: engine version, PostgreSQL extension, SQL Server job/CLR, driver or migration constraint'
   },
   {
+    id: 'recoveryControls',
+    title: 'Which recovery mechanisms need verification?',
+    help: 'High availability, backups and disaster recovery solve different failures. Replicas do not replace restore testing.',
+    when: (a) => ['defined', 'important'].includes(a.recovery),
+    multiple: true,
+    options: [
+      { value: 'ha', label: 'High availability or zone redundancy for local failures' },
+      { value: 'pitr', label: 'Backups, retention and point-in-time restore after mistakes' },
+      { value: 'dr', label: 'Disaster recovery, geo-replication and application failover' },
+      { value: 'replicas', label: 'Read replicas, with an independently tested recovery strategy' },
+      notSure
+    ]
+  },
+  {
+    id: 'sourceFiles',
+    title: 'Does the search workload own original files?',
+    help: 'An index can derive from files, existing records or an external source. Do not add object storage just because retrieval is needed.',
+    when: (a) => ['search', 'mixed'].includes(a.workload) || ['search', 'mixed'].includes(a.dataShape),
+    options: [
+      { value: 'yes', label: 'Yes, this application keeps original documents or files' },
+      { value: 'no', label: 'No, source data already lives elsewhere' },
+      notSure
+    ]
+  },
+  {
     id: 'durable',
     title: 'Does the workload need a durable system of record?',
     help: 'A cache or index can support an application without replacing its source of truth.',
@@ -189,9 +320,25 @@ export const questions = [
       { value: 'no', label: 'No, the data can be regenerated or is short-lived' },
       notSure
     ]
+  },
+  {
+    id: 'recordModel',
+    title: 'What model does the authoritative application state need?',
+    help: 'Needing durable state does not automatically mean SQL. Preserve an existing store where appropriate.',
+    when: (a) => a.durable === 'yes' && (['cache', 'search', 'mixed'].includes(a.workload) || ['cache', 'search', 'mixed'].includes(a.dataShape)),
+    options: [
+      { value: 'relational', label: 'Related application records with joins and business transactions' },
+      { value: 'documents', label: 'Document aggregates or nonrelational authoritative state' },
+      { value: 'existing', label: 'Keep an existing authoritative store' },
+      notSure
+    ]
   }
 ];
 
 export function getQuestions(answers = {}) {
+  if (['no', 'external', 'processing'].includes(answers.persistence) || answers.migrationIntent === 'keep') {
+    const ids = answers.migrationIntent === 'keep' ? ['workload', 'persistence', 'dataShape', 'migrationIntent'] : ['workload', 'persistence'];
+    return questions.filter((question) => ids.includes(question.id));
+  }
   return questions.filter((question) => !question.when || question.when(answers));
 }

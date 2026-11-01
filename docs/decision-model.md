@@ -24,6 +24,10 @@ Unknown is not unsupported. A result cannot turn missing feature evidence into a
 
 | Rule ID | Decision | Evidence boundary |
 |---|---|---|
+| `keep-existing-store` | Explicitly retaining the current database does not imply an Azure migration. | `arch-data-considerations`; lifecycle, recovery and security still need review. |
+| `postgres-existing-engine` | PostgreSQL Flexible Server is a compatibility-gated target for an existing PostgreSQL contract. | `postgres-overview` and `postgres-extensions`; engine identity is not universal compatibility. |
+| `mysql-existing-engine` | MySQL Flexible Server is considered for MySQL or a validated MariaDB migration. | `mysql-overview`; do not conflate MySQL and MariaDB. |
+| `cassandra-feature-validation` | Compare the Cassandra API separately from native managed Apache Cassandra. | `cosmos-overview` and `cassandra-managed-overview`; version, features and topology are gates. |
 | `files-no-db` | Files-only needs can produce Blob Storage with a no-database-needed outcome. | Object storage and database models are distinct in `arch-data-models`. Metadata, relationships or transactions reopen database assessment. |
 | `no-persistent-store` | A user-confirmed lack of persistent storage returns no database candidate. | This is an explicit user requirement, not an inference from language or workload framework. |
 | `sql-instance-features` | SQL Agent, CLR, linked servers, cross-database queries or transactional replication point to evaluating Managed Instance; SQL VM remains an alternative if feature testing fails. | `azure-sql-decision`; exact compatibility still needs feature validation. |
@@ -51,7 +55,11 @@ Multi-store results describe responsibility boundaries, not automatic integratio
 
 ## Assessment inputs and branches
 
-The question catalogue begins with workload and data/access patterns. Engine inventory appears for migration/modernisation. Extension/feature notes appear only when relevant. Cache durability appears for cache/search/mixed work. “Not sure yet” and omitted optional answers are represented as unknown, not as a negative.
+The question catalogue begins with workload and persistence, then data/access patterns. No-storage and keep-existing choices skip unnecessary configuration questions. Mixed-role selection, relationships and transaction scope adapt to the data model. Migration intent and an optional dependency inventory capture source versions, drivers/dialect, procedures, triggers, extensions, jobs, privileges, vendor support and downtime. Source-file and application-state questions avoid adding stores from an unknown answer.
+
+Volume/activity ranges, operational priorities, security controls and recovery mechanisms are review inputs, not sizing rules. The results show recorded requirements and identify which fields influence policy. Free-text notes are retained for the user’s review, not interpreted as proof of feature support.
+
+“Not sure yet” and omitted optional answers are unknown, not negatives. Choosing a concrete multi-select answer removes the mutually exclusive unknown choice. Hidden branch answers are removed before further evaluation.
 
 The scenario fixtures in `src/data/scenarios.js` are acceptance examples for all 12 hard cases in the project brief. `tests/recommendations.test.js` runs them through the same deterministic rules as the application.
 
@@ -60,5 +68,7 @@ The scenario fixtures in `src/data/scenarios.js` are acceptance examples for all
 - The catalogue is a starting point, not a complete feature matrix for every API or SKU.
 - The app does not fetch live Azure pricing, regions, retirement status or product availability.
 - The source verification date is 1 November 2026. A later source update can make a claim stale; review source metadata before release.
+- Automated integrity checks reject review dates older than 180 days; update them only after re-verifying the source.
+- Common profile review dimensions explicitly mark missing version, transactions, scaling, recovery, networking and pricing evidence as unknown rather than guessing.
 - The recommendation data does not decide schema, partition key, topology, capacity, backup policy, security architecture or migration execution.
 - The assessment is browser-only. Answers and optional notes remain in memory; only the light/dark theme preference is stored locally.

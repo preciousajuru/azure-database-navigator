@@ -17,14 +17,15 @@ This checklist prepares a release. It does **not** authorize enabling GitHub Pag
 
 - [x] Browser-only, static architecture; no account, backend, telemetry, runtime CDN or Azure credentials.
 - [x] Responsive workspace, light default theme, dark theme, keyboard-operable controls and reduced-motion handling.
-- [ ] Manual browser pass at phone, tablet, narrow desktop and desktop widths.
-- [ ] Verify keyboard-only flow and screen-reader labels in a real browser.
-- [ ] Create and review genuine screenshots from the actual application after the visual pass.
+- [x] Chromium workflow and captured visual pass at 375/768/1024/1440 px in light and dark.
+- [x] Automated keyboard/focus, reduced-motion and WCAG A/AA checks in the real browser.
+- [ ] Review using an actual screen reader and additional browser engines.
+- [x] Create genuine Chromium screenshots of the local application, at four widths in both themes.
 
 ## Editorial publication
 
-- [x] One canonical article source at `docs/article.html`.
-- [x] Article title, author, publication date, British English and disclaimer included.
+- [x] One canonical article source at `docs/article.md`, with generated HTML and portable copies.
+- [x] Article title, author, article date, British English and disclaimer included.
 - [ ] Proofread against current sources and check every outbound link at publication time.
 - [ ] Obtain final editorial approval.
 - [ ] Publish the companion article only after explicit authorization.
@@ -39,3 +40,15 @@ This checklist prepares a release. It does **not** authorize enabling GitHub Pag
 ## Publication claims
 
 Do not claim a live URL, successful deployment, screenshots, traffic, adoption or outcomes unless independently verified. Do not promise that recommendations guarantee availability, compliance, cost or compatibility.
+
+## Local verification evidence
+
+The local checks on 1 November 2026 cover deterministic rules, catalogue/source integrity, rendered pages/assets/anchors, browser workflows, accessibility and genuine screenshots. The screenshot record describes capture provenance; the images do not demonstrate deployment.
+
+`npm audit --audit-level=low` reported zero known advisory findings for the pinned dependency tree. The build/test-only dependency licence metadata is MIT (`marked`), Apache-2.0 (Playwright), and MPL-2.0 (axe-core integration). These packages are not loaded by the published application.
+
+A read-only pre-publication security review found no reportable vulnerability in the static/runtime, Markdown build, loopback server or workflow boundary. Advisory and targeted credential checks do not establish package provenance, exclude future vulnerabilities or substitute for a comprehensive organisational secret scan.
+
+The targeted repository scan found no private-key blocks, common GitHub/AWS token patterns or Azure Storage account-key strings in source, configuration and documentation files. The final local run passed 52 Node tests and 56 Chromium workflow/accessibility tests; the build validated references in 12 HTML pages and included 12 genuine screenshots.
+
+Publication still requires owner approval, GitHub Actions verification, current external source/link review, actual screen-reader review and independently verified public application/article URLs after authorised deployment.

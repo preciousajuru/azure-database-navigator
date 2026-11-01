@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
+const mount = '/azure-database-navigator';
 const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.css', 'text/css; charset=utf-8'],
@@ -25,6 +26,11 @@ const server = createServer(async (request, response) => {
     response.writeHead(400).end('Bad request');
     return;
   }
+  if (pathname === mount) {
+    response.writeHead(301, { Location: `${mount}/` }).end();
+    return;
+  }
+  if (pathname.startsWith(`${mount}/`)) pathname = pathname.slice(mount.length);
   const requested = path.resolve(root, `.${pathname}`);
   const relative = path.relative(root, requested);
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
@@ -49,6 +55,8 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(4173, '127.0.0.1', () => {
-  console.log('Azure Database Navigator: http://127.0.0.1:4173/');
+const port = Number(process.env.PORT || 4173);
+if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a valid TCP port.');
+server.listen(port, '127.0.0.1', () => {
+  console.log(`Azure Database Navigator: http://127.0.0.1:${port}${mount}/`);
 });

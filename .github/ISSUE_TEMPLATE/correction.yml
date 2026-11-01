@@ -1,8 +1,6 @@
 name: Evidence correction
 description: Report a source, capability, lifecycle or recommendation that needs review.
 title: "[Correction]: "
-labels:
-  - evidence
 body:
   - type: markdown
     attributes:

@@ -38,7 +38,7 @@ export const scenarios = [
   {
     id: 'rag',
     title: 'RAG application with source documents, state and search',
-    answers: { workload: 'search', persistence: 'durable', dataShape: 'search', accessPattern: 'full-text', constraints: [], operations: 'bursty', geography: 'single-region', recovery: 'important', durable: 'yes' },
+    answers: { workload: 'search', persistence: 'durable', dataShape: 'search', accessPattern: 'full-text', constraints: [], operations: 'bursty', geography: 'single-region', recovery: 'important', sourceFiles: 'yes', durable: 'yes', recordModel: 'relational' },
     expected: ['blob-storage', 'ai-search', 'azure-sql-db']
   },
   {
@@ -50,7 +50,7 @@ export const scenarios = [
   {
     id: 'cache',
     title: 'Redis cache alongside durable application data',
-    answers: { workload: 'cache', persistence: 'transient', dataShape: 'cache', accessPattern: 'partition-key-lookup', operations: 'bursty', geography: 'single-region', recovery: 'basic', durable: 'yes' },
+    answers: { workload: 'cache', persistence: 'durable', dataShape: 'cache', accessPattern: 'partition-key-lookup', operations: 'bursty', geography: 'single-region', recovery: 'basic', durable: 'yes', recordModel: 'relational' },
     expected: ['managed-redis', 'azure-sql-db']
   },
   {
