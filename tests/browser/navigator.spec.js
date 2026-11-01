@@ -162,10 +162,12 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page.locator('#app h1')).toBeFocused();
   await expect(page.locator('.service-card')).toHaveCount(24);
   const mi = page.locator('.service-card').filter({ has: page.getByRole('heading', { name: 'Azure SQL Managed Instance', exact: true }) });
-  await mi.getByText('Technical profile: compatibility, operations and configuration', { exact: true }).click();
+  await mi.getByText('Service profile: what it is and how it differs', { exact: true }).click();
   for (const label of ['What it is', 'Data model', 'Engine / API', 'Data role']) {
     await expect(mi.locator('.profile-review dt').filter({ hasText: label }).locator('.capability-chip')).toHaveCount(0);
   }
+  await mi.getByText('Capabilities by section', { exact: true }).click();
+  await expect(mi.locator('.capability-section-title')).toHaveCount(9);
   await page.getByRole('searchbox').pressSequentially('vCore');
   await expect(page.locator('.service-card h3')).toHaveText(['Azure DocumentDB']);
   await expect(page.getByRole('searchbox')).toBeFocused();
@@ -175,20 +177,33 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page.locator('.service-card')).toHaveCount(2);
   await expect(page.locator('#family-filter')).toBeFocused();
   await page.getByRole('button', { name: 'Compare Services', exact: true }).click();
-  await expect(page.locator('.comparison-table')).toBeVisible();
-  for (const label of ['What it is', 'Data model', 'Engine / API', 'Data role']) {
+  await expect(page.locator('.comparison-table').first()).toBeVisible();
+  await expect(page.locator('.compare-section h2')).toHaveText(['Database engine and data model', 'Transactions and consistency', 'Queries and indexing', 'Scaling and performance', 'Availability and recovery', 'Security and networking', 'Migration and compatibility', 'Operational responsibilities', 'Cost considerations']);
+  await expect(page.locator('.comparison-legend .capability-chip')).toHaveText(['Supported', 'Conditional', 'Not supported', 'Not applicable', 'Needs verification']);
+  for (const label of ['Transaction scope', 'Region-specific and tier-specific conditions', 'Billing model']) {
     const row = page.locator('.comparison-table tr').filter({ has: page.getByRole('rowheader', { name: label, exact: true }) });
+    await expect(row.locator('td')).toHaveCount(2);
     await expect(row.locator('.capability-chip')).toHaveCount(0);
   }
+  const sqlEngine = page.locator('.comparison-table tr').filter({ has: page.getByRole('rowheader', { name: 'Native SQL Server engine compatibility', exact: true }) });
+  await expect(sqlEngine.locator('.capability-chip')).toHaveText(['Supported', 'Not applicable']);
+  expect(await page.locator('td.cell-supported, td.cell-conditional, td.cell-unsupported, td.cell-needs-verification').evaluateAll((cells) => cells.every((cell) => cell.querySelector('.cell-sources a[href^="https://"]')))).toBe(true);
+  const rowCount = await page.locator('.comparison-table tbody tr').count();
+  await page.getByLabel('Show only rows where the documented states differ').check();
+  await expect(page.getByLabel('Show only rows where the documented states differ')).toBeFocused();
+  expect(await page.locator('.comparison-table tbody tr').count()).toBeLessThan(rowCount);
+  await page.getByLabel('Show only rows where the documented states differ').uncheck();
+  await page.locator('.compare-picker-wrap > summary').click();
   await page.locator('.compare-picker input[data-service="azure-sql-mi"]').check();
+  await expect(page.locator('.compare-picker input[data-service="azure-sql-mi"]')).toBeFocused();
   await expect(page.locator('.compare-picker input:checked')).toHaveCount(3);
   await expect(page.locator('.compare-picker input[data-service="mysql-flex"]')).toBeDisabled();
   await page.locator('.compare-picker input[data-service="azure-sql-mi"]').uncheck();
   await page.locator('.compare-picker input[data-service="postgres-flex"]').uncheck();
   await expect(page.getByRole('heading', { name: 'Select two or three services to compare' })).toBeVisible();
   await page.locator('.compare-picker input[data-service="mysql-flex"]').check();
-  await page.locator('.table-wrap').focus();
-  await expect(page.locator('.table-wrap')).toBeFocused();
+  await page.locator('.table-wrap').first().focus();
+  await expect(page.locator('.table-wrap').first()).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await page.getByRole('button', { name: 'Learn the Concepts', exact: true }).click();
   await expect(page.locator('.concept-card')).toHaveCount(7);
@@ -196,6 +211,33 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page).toHaveURL(/\/azure-database-navigator\/docs\/article\.html$/);
   await expect(page.locator('article img')).toHaveCount(2);
   expect(await page.locator('article img').evaluateAll((images) => images.every((image) => image.complete && image.naturalWidth > 0))).toBe(true);
+});
+
+test('comparison never shows Unknown, keeps every cell labelled and fits without clipping', async ({ page }, testInfo) => {
+  await page.locator('.primary-nav [data-view="compare"]').click();
+  await page.locator('.compare-picker-wrap > summary').click();
+  for (const [remove, add] of [[null, 'cosmos-nosql'], ['postgres-flex', 'ai-search'], ['azure-sql-db', 'managed-redis']]) {
+    if (remove) await page.locator(`.compare-picker input[data-service="${remove}"]`).uncheck();
+    await page.locator(`.compare-picker input[data-service="${add}"]`).check();
+    await page.locator('.cell-detail').evaluateAll((details) => details.forEach((detail) => { detail.open = true; }));
+    await expect(page.locator('#app')).not.toContainText(/\bunknown\b/i);
+    await expect(page.locator('.comparison-table td')).not.toHaveCount(0);
+    expect(await page.locator('.comparison-table td').evaluateAll((cells) => cells.every((cell) => cell.dataset.service && cell.querySelector('.cell-summary')?.textContent.trim()))).toBe(true);
+    const clipped = await page.locator('.comparison-table td, .compare-section').evaluateAll((elements) => elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent.trim().slice(0, 60)));
+    expect(clipped).toEqual([]);
+    if (testInfo.project.use.viewport.width <= 760) {
+      expect(await page.locator('.comparison-table thead').first().evaluate((head) => head.getBoundingClientRect().height <= 1)).toBe(true);
+      expect(await page.locator('.comparison-table td').first().evaluate((cell) => getComputedStyle(cell, '::before').content)).toContain(await page.locator('.comparison-table td').first().getAttribute('data-service'));
+    }
+    await noOverflow(page);
+  }
+  await page.locator('.compare-picker input[data-service="cosmos-nosql"]').uncheck();
+  await page.locator('.compare-picker input[data-service="azure-sql-mi"]').check();
+  const verify = page.locator('td.cell-needs-verification').first();
+  await page.locator('.compare-picker input[data-service="ai-search"]').uncheck();
+  await page.locator('.compare-picker input[data-service="sql-fabric"]').check();
+  await expect(verify).toBeVisible();
+  await expect(verify.locator('summary')).toContainText('What to verify');
 });
 
 test('WCAG AA automated checks on assessment, explorer, comparison, concepts and multi-store result', async ({ page }) => {

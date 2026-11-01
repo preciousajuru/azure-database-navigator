@@ -5,6 +5,7 @@ import { sources, sourceById } from '../src/data/sources.js';
 import { getQuestions } from '../src/data/questions.js';
 import { rules, ruleById } from '../src/data/rules.js';
 import { profileFor } from '../src/data/profiles.js';
+import { capabilityFor } from '../src/data/capabilities.js';
 
 test('service and source identifiers are unique and all material references resolve', () => {
   assert.equal(new Set(services.map((service) => service.id)).size, services.length);
@@ -13,11 +14,6 @@ test('service and source identifiers are unique and all material references reso
     assert.ok(service.name && service.kind && service.model && service.api && service.role);
     assert.ok(service.sourceIds.length);
     for (const id of service.sourceIds) assert.ok(sourceById[id], `${service.id} missing source ${id}`);
-    for (const [name, capability] of Object.entries(service.capabilities)) {
-      assert.ok(['supported', 'unsupported', 'conditional', 'unknown', 'not-applicable'].includes(capability.status), `${service.id}.${name}`);
-      if (capability.status !== 'unknown') assert.ok(capability.sourceIds.length, `${service.id}.${name} has no evidence`);
-      for (const id of capability.sourceIds) assert.ok(sourceById[id], `${service.id}.${name} missing source ${id}`);
-    }
   }
 });
 
@@ -31,9 +27,9 @@ test('all references have HTTPS URLs, dates and explicit limitations', () => {
   }
 });
 
-test('unknown capability remains different from unsupported', () => {
-  assert.equal(serviceById['azure-documentdb'].capabilities.featureCompatibility.status, 'conditional');
-  assert.equal(serviceById['cosmos-mongo-ru'].capabilities.featureCompatibility.status, 'conditional');
+test('MongoDB-compatible offerings are distinct services with conditional protocol compatibility', () => {
+  assert.equal(capabilityFor('azure-documentdb', 'protocolCompatibility').status, 'conditional');
+  assert.equal(capabilityFor('cosmos-mongo-ru', 'protocolCompatibility').status, 'conditional');
   assert.ok(serviceById['azure-documentdb'].aliases.includes('Cosmos DB for MongoDB (vCore)'));
   assert.notEqual(serviceById['cosmos-mongo-ru'].id, serviceById['azure-documentdb'].id);
 });
@@ -81,17 +77,17 @@ test('no-storage and keep-existing flows skip unnecessary configuration question
   assert.ok(!keep.includes('engine') && !keep.includes('recovery') && keep.includes('migrationIntent'));
 });
 
-test('every profile explicitly separates evidence from unresolved review dimensions', () => {
+test('every narrative profile is sourced and carries no capability state', () => {
   for (const service of services) {
     assert.equal(service.verifiedOn, '2026-11-01');
-    assert.equal(Object.keys(profileFor(service)).length, 15);
     for (const entry of Object.values(profileFor(service))) {
-      assert.ok(entry.sourceIds.every((id) => sourceById[id]));
-      assert.ok(!entry.status || entry.condition);
+      assert.ok(entry.text && entry.sourceIds.length && entry.sourceIds.every((id) => sourceById[id]), service.id);
+      assert.equal(entry.status, undefined);
+      assert.doesNotMatch(entry.text, /\bunknown\b/i, service.id);
     }
   }
-  assert.equal(serviceById['azure-sql-db'].capabilities.nativeThreePartNameQueries.status, 'unsupported');
-  assert.equal(serviceById['azure-sql-db'].capabilities.crossDatabaseQueries.status, 'conditional');
+  assert.equal(capabilityFor('azure-sql-db', 'crossDatabaseQuery').status, 'unsupported');
+  assert.equal(capabilityFor('azure-sql-db', 'federatedQuery').status, 'conditional');
 });
 
 test('conditional follow-ups stay after the question that reveals them', () => {

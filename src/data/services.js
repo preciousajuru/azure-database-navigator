@@ -1,7 +1,6 @@
 import { REVIEWED_ON } from './sources.js';
 import { familyFor } from './families.js';
 
-const cap = (status, sourceIds = [], condition = '') => ({ status, sourceIds, condition });
 
 export const services = [
   {
@@ -9,14 +8,6 @@ export const services = [
     model: 'SQL Server relational engine', api: 'T-SQL / SQL Server engine', role: 'System of record',
     summary: 'Database-scoped managed SQL Server option for application databases.',
     configurationConsiderations: ['Choose database service first, then validate serverless or provisioned compute, elastic pools and service tier against measured workload needs.'],
-    capabilities: {
-      relational: cap('supported', ['arch-data-models', 'azure-sql-family']),
-      sqlServerDatabaseEngine: cap('supported', ['azure-sql-family']),
-      instanceFeatures: cap('conditional', ['azure-sql-decision'], 'Verify each required instance-level feature; several are decision points for Managed Instance or VM.'),
-      crossDatabaseQueries: cap('conditional', ['azure-sql-features'], 'Native three-part name queries are not supported in SQL Database; elastic query is a separate, limited feature, not equivalent native cross-database behaviour.'),
-      nativeThreePartNameQueries: cap('unsupported', ['azure-sql-features'], 'The official feature matrix marks native cross-database/three-part name queries as unsupported; evaluate elastic query separately.'),
-      vectorSearch: cap('conditional', ['sql-vector', 'vector-selection'], 'Native vectors: float32 up to 1,998 dimensions; float16 up to 3,996. SQL DiskANN indexing is preview in the selection guide; verify index status, driver, tier and region before using it.')
-    },
     caveats: ['Choose database service first; serverless, provisioned, pools, and service tiers are separate configuration choices.', 'Do not infer a purchasing tier, capacity, or price from this assessment.'],
     sourceIds: ['azure-sql-family', 'azure-sql-decision', 'azure-sql-features', 'arch-data-models']
   },
@@ -25,11 +16,6 @@ export const services = [
     model: 'SQL Server relational engine', api: 'T-SQL / SQL Server engine', role: 'System of record',
     summary: 'Managed SQL Server instance model for workloads whose verified feature needs exceed database-scoped options.',
     configurationConsiderations: ['Verify required instance features, networking, migration and regional availability before deciding on the target configuration.'],
-    capabilities: {
-      relational: cap('supported', ['azure-sql-family']),
-      sqlServerInstanceFeatures: cap('conditional', ['azure-sql-decision', 'azure-sql-family'], 'Feature availability is feature-by-feature; confirm exact compatibility against the current matrix.'),
-      operatingSystemControl: cap('unsupported', ['azure-sql-decision'])
-    },
     caveats: ['“Near-complete” SQL Server feature parity is not identical to universal compatibility.', 'Provisioning, networking, migration, and recovery still require design.'],
     sourceIds: ['azure-sql-family', 'azure-sql-decision']
   },
@@ -38,12 +24,6 @@ export const services = [
     model: 'SQL Server relational engine', api: 'SQL Server / T-SQL', role: 'System of record',
     summary: 'SQL Server hosted on an Azure virtual machine where OS or file-system control or a specific engine version is a requirement.',
     configurationConsiderations: ['Plan VM/SQL version, operating-system administration, patching, backups, high availability, monitoring and recovery ownership.'],
-    capabilities: {
-      relational: cap('supported', ['azure-sql-family']),
-      sqlServerEngine: cap('supported', ['azure-sql-family']),
-      operatingSystemControl: cap('supported', ['azure-sql-decision']),
-      customerOperations: cap('conditional', ['azure-sql-family'], 'Operating-system and database administration responsibilities depend on the chosen VM and management setup.')
-    },
     caveats: ['More control entails more operational responsibility; specify patching, backups, HA and DR ownership.', 'A legacy VM by itself does not establish a need for a VM target.'],
     sourceIds: ['azure-sql-family', 'azure-sql-decision']
   },
@@ -52,12 +32,6 @@ export const services = [
     model: 'PostgreSQL relational engine', api: 'PostgreSQL wire protocol', role: 'System of record',
     summary: 'Managed PostgreSQL with configurable server settings and deployment options.',
     configurationConsiderations: ['Validate PostgreSQL version, required extensions, compute, HA, replicas, storage, backup retention and region.'],
-    capabilities: {
-      relational: cap('supported', ['postgres-overview']),
-      postgresEngine: cap('supported', ['postgres-overview']),
-      requiredExtensions: cap('conditional', ['postgres-extensions'], 'Confirm the exact extension, server version, allow-list, parameters and region before selecting.'),
-      vectorSearch: cap('conditional', ['postgres-vector', 'vector-selection'], 'Allow-list and create the vector extension in each database. The guide lists HNSW/IVFFlat indexing up to 2,000 dimensions; extension version, other index types, tier and region require verification.')
-    },
     caveats: ['A named extension is a validation gate, not a promise of availability.', 'Check PostgreSQL version, extension allow-list, region, HA and backup settings.'],
     sourceIds: ['postgres-overview', 'postgres-extensions']
   },
@@ -66,11 +40,6 @@ export const services = [
     model: 'MySQL Community Edition relational engine', api: 'MySQL protocol', role: 'System of record',
     summary: 'Managed MySQL service for applications requiring the MySQL engine and ecosystem.',
     configurationConsiderations: ['Validate MySQL version, compute tier, HA, backup retention, network and migration compatibility.'],
-    capabilities: {
-      relational: cap('supported', ['mysql-overview']),
-      mysqlEngine: cap('supported', ['mysql-overview']),
-      mariadbCompatibility: cap('unknown', ['mysql-overview', 'mariadb-retirement'], 'A MariaDB workload needs engine, SQL-mode, collation, plugin, driver and application-level migration validation.')
-    },
     caveats: ['MySQL is not a drop-in promise for every MariaDB deployment.', 'The Azure Database for MariaDB service retirement does not mean the MariaDB engine itself is retired.'],
     sourceIds: ['mysql-overview', 'mariadb-retirement']
   },
@@ -78,10 +47,6 @@ export const services = [
     id: 'sql-fabric', name: 'SQL database in Microsoft Fabric', family: 'Relational', kind: 'Fabric-integrated transactional database',
     model: 'SQL relational engine', api: 'SQL', role: 'System of record',
     summary: 'Transactional SQL option associated with the Microsoft Fabric ecosystem.',
-    capabilities: {
-      relational: cap('supported', ['fabric-sql']),
-      fabricIntegration: cap('conditional', ['fabric-sql'], 'Confirm current availability, feature set, capacity, region, and production suitability.')
-    },
     caveats: ['Not interchangeable with Azure SQL Database by name alone.', 'Current product availability and platform constraints need confirmation.'],
     sourceIds: ['fabric-sql']
   },
@@ -90,13 +55,6 @@ export const services = [
     model: 'JSON documents', api: 'Native NoSQL API and SQL-like query language', role: 'System of record',
     summary: 'Document-oriented NoSQL API with account-level consistency choices and partition-aware data modelling.',
     configurationConsiderations: ['Design partition key, throughput mode, indexing, consistency, regions and transaction boundaries together.'],
-    capabilities: {
-      document: cap('supported', ['cosmos-overview', 'arch-data-models']),
-      configurableConsistency: cap('supported', ['cosmos-consistency']),
-      transactionalBoundary: cap('conditional', ['cosmos-transactions'], 'NoSQL multi-item ACID transactions are scoped to a container logical partition; cross-partition and cross-service changes need separate coordination.'),
-      globalWrites: cap('conditional', ['cosmos-overview'], 'Global distribution and write-region behaviour depend on account configuration and requirements.'),
-      vectorSearch: cap('conditional', ['cosmos-vector'], 'Enable NoSQL vector search and container policies. Flat supports 505 dimensions; quantizedFlat/DiskANN 4,096. Check partitioning restrictions and current configuration; no universal latency guarantee.')
-    },
     caveats: ['JSON alone is not a reason to choose Cosmos DB.', 'Partition key, throughput mode, consistency, regions, request costs and transaction scope require explicit design.'],
     sourceIds: ['cosmos-overview', 'cosmos-consistency', 'cosmos-partitioning', 'cosmos-transactions']
   },
@@ -104,10 +62,6 @@ export const services = [
     id: 'cosmos-mongo-ru', name: 'Azure Cosmos DB for MongoDB (RU-based)', family: 'Document & distributed', kind: 'MongoDB-compatible API offering',
     model: 'Document', api: 'MongoDB wire protocol; RU-based offering', role: 'System of record',
     summary: 'Cosmos DB API for MongoDB using the request-unit model; distinct from Azure DocumentDB.',
-    capabilities: {
-      mongoWireProtocol: cap('conditional', ['cosmos-mongo-overview'], 'Protocol/API choice does not establish complete MongoDB feature parity.'),
-      featureCompatibility: cap('conditional', ['cosmos-mongodb-features'], 'The linked feature matrix covers the MongoDB 4.2 API; validate required features against the exact target API version.')
-    },
     caveats: ['Azure DocumentDB is the current name for the vCore-based offering, not an additional third option.', 'Do not treat MongoDB driver support as full MongoDB server compatibility.'],
     sourceIds: ['cosmos-mongo-overview', 'cosmos-mongodb-features']
   },
@@ -116,12 +70,6 @@ export const services = [
     model: 'Document', api: 'MongoDB wire protocol', role: 'System of record',
     aliases: ['Cosmos DB for MongoDB (vCore)'],
     summary: 'Current name for the vCore-based Cosmos DB for MongoDB offering; managed document database with MongoDB wire-protocol compatibility.',
-    capabilities: {
-      document: cap('supported', ['documentdb-overview', 'documentdb-release-notes']),
-      mongoWireProtocol: cap('supported', ['documentdb-mql-compat']),
-      featureCompatibility: cap('conditional', ['documentdb-mql-compat'], 'The feature reference lists support by DocumentDB version; verify every required feature, command and driver for the target version.'),
-      vectorSearch: cap('conditional', ['documentdb-vector', 'vector-selection'], 'IVF, HNSW and DiskANN are documented. Dimension limits vary with compression/index configuration; verify selected algorithm, version, tier and region rather than choosing from the maximum advertised limit.')
-    },
     caveats: ['Protocol compatibility is not feature parity.', 'Check the current compatibility matrix, region, migration path and operational constraints.'],
     sourceIds: ['documentdb-overview', 'documentdb-release-notes', 'documentdb-mql-compat']
   },
@@ -129,11 +77,6 @@ export const services = [
     id: 'cosmos-other-apis', name: 'Azure Cosmos DB APIs (Cassandra, Gremlin, Table)', family: 'Document & distributed', kind: 'API-specific NoSQL offerings',
     model: 'Wide-column, graph or key-value depending on API', api: 'Cassandra / Gremlin / Table APIs', role: 'System of record',
     summary: 'Separate API choices for workloads tied to a particular data model or protocol.',
-    capabilities: {
-      apiChoice: cap('supported', ['cosmos-cassandra-api', 'gremlin-overview', 'table-overview']),
-      graphTraversal: cap('conditional', ['gremlin-overview'], 'This applies to the Apache Gremlin API only; validate TinkerPop support, partitioning, traversal depth and current lifecycle guidance.'),
-      compatibility: cap('unknown', ['cosmos-cassandra-api', 'gremlin-overview'], 'Validate protocol version, operations, data model and feature-specific compatibility for the chosen API.')
-    },
     caveats: ['Different Cosmos APIs are not one interchangeable engine.', 'Evaluate migration and client compatibility per API.'],
     sourceIds: ['cosmos-cassandra-api', 'gremlin-overview', 'table-overview']
   },
@@ -141,10 +84,6 @@ export const services = [
     id: 'managed-cassandra', name: 'Azure Managed Instance for Apache Cassandra', family: 'Document & distributed', kind: 'Managed native Cassandra service',
     model: 'Wide-column', api: 'Apache Cassandra/CQL', role: 'System of record',
     summary: 'Managed native Apache Cassandra deployment in Azure; the current overview documents support through Cassandra 5.0.',
-    capabilities: {
-      wideColumn: cap('supported', ['cassandra-managed-overview']),
-      cassandraCompatibility: cap('conditional', ['cassandra-managed-overview'], 'The current overview documents support through Cassandra 5.0; verify target version, topology, migration path and region.')
-    },
     caveats: ['A legacy Cassandra deployment does not prove this target is compatible.', 'Confirm region availability, service status and migration path before deployment.'],
     sourceIds: ['arch-data-models', 'cassandra-managed-overview']
   },
@@ -152,12 +91,6 @@ export const services = [
     id: 'managed-redis', name: 'Azure Managed Redis', family: 'Cache', kind: 'Managed in-memory cache',
     model: 'Key-value / in-memory data structures', api: 'Redis-compatible client protocol', role: 'Cache or transient data',
     summary: 'Managed Redis service to evaluate for cache and in-memory data needs.',
-    capabilities: {
-      cache: cap('supported', ['arch-data-models', 'managed-redis-overview']),
-      durableSystemOfRecord: cap('conditional', ['managed-redis-overview'], 'The cache architecture does not make Redis the source of truth. Assess any intended authoritative-state use against the service’s actual persistence, recovery and failure behaviour.'),
-      clientCompatibility: cap('conditional', ['managed-redis-overview'], 'Check clustering and client-library requirements for the configured instance.'),
-      vectorSearch: cap('conditional', ['redis-vector'], 'Provision RediSearch at creation, Enterprise clustering and NoEviction. Supported on Memory Optimized, Balanced and Compute Optimized, not Flash Optimized. Verify FLAT/HNSW, region and memory/index overhead.')
-    },
     caveats: ['Use with an explicit source-of-truth and cache invalidation/failure strategy when data must be durable.', 'Azure Cache for Redis tiers have retirement dates that vary by tier.'],
     sourceIds: ['arch-data-models', 'managed-redis-overview', 'redis-retirement']
   },
@@ -165,10 +98,6 @@ export const services = [
     id: 'blob-storage', name: 'Azure Blob Storage', family: 'Specialised storage & analytics', kind: 'Object storage',
     model: 'Objects / blobs', api: 'Azure Storage APIs', role: 'File and object store',
     summary: 'Object storage for documents, media, backups, exports and other files.',
-    capabilities: {
-      objectStorage: cap('supported', ['blob-overview']),
-      relationalDatabase: cap('unsupported', ['arch-data-models'], 'Object storage is not a relational database.')
-    },
     caveats: ['Blob Storage is not a database or automatically a transactional record store.', 'Check access patterns, namespace, identity, network, retention and lifecycle policy.'],
     sourceIds: ['blob-overview', 'arch-data-models']
   },
@@ -176,10 +105,6 @@ export const services = [
     id: 'table-storage', name: 'Azure Table Storage', family: 'Specialised storage & analytics', kind: 'Key-value / NoSQL storage',
     model: 'Key-value and schemaless entities', api: 'Azure Tables API', role: 'Special-purpose store',
     summary: 'Simple key-oriented entity storage; distinguish it from a relational database and Cosmos DB Table API.',
-    capabilities: {
-      keyValue: cap('supported', ['table-overview']),
-      relationalDatabase: cap('not-applicable', ['table-overview'], 'A key/attribute entity store, not a relational engine.')
-    },
     caveats: ['Do not assume Azure Table Storage and Cosmos DB Table API have the same capabilities or operating model.'],
     sourceIds: ['table-overview']
   },
@@ -187,10 +112,6 @@ export const services = [
     id: 'adls-gen2', name: 'Azure Data Lake Storage Gen2', family: 'Specialised storage & analytics', kind: 'Data lake / object storage',
     model: 'Files and objects for analytics', api: 'Azure Storage APIs with hierarchical namespace options', role: 'Data lake',
     summary: 'File/object storage for analytical data and data-lake patterns.',
-    capabilities: {
-      objectStorage: cap('supported', ['adls-overview']),
-      analyticsStore: cap('conditional', ['adls-overview'], 'Suitability depends on workload shape, governance, processing and integration.')
-    },
     caveats: ['A data lake is not an OLTP database or search index.'],
     sourceIds: ['adls-overview']
   },
@@ -198,10 +119,6 @@ export const services = [
     id: 'ai-search', name: 'Azure AI Search', family: 'Specialised storage & analytics', kind: 'Search and indexing service',
     model: 'Search index; optional vector search', api: 'Search APIs', role: 'Derived index / retrieval',
     summary: 'Search and indexing service for full-text and relevance-oriented retrieval patterns.',
-    capabilities: {
-      searchIndex: cap('supported', ['arch-data-models', 'ai-search-overview']),
-      vectorSearch: cap('conditional', ['search-vector', 'vector-selection'], 'Vector search supports all regions/tiers; verify service age and quotas, HNSW/exhaustive search and dimensions. Semantic ranking and embedding generation have separate availability/cost conditions.')
-    },
     caveats: ['A search index is usually derived from source records; define indexing lag, reindexing and source-of-truth behaviour.', 'AI or RAG does not itself require a vector database.'],
     sourceIds: ['arch-data-models', 'ai-search-overview']
   },
@@ -209,10 +126,6 @@ export const services = [
     id: 'data-explorer', name: 'Azure Data Explorer', family: 'Specialised storage & analytics', kind: 'Time-series and analytics service',
     model: 'Time-series / analytical event data', api: 'Kusto Query Language', role: 'Analytics store',
     summary: 'Analytics-oriented option to evaluate for high-ingest telemetry and event queries.',
-    capabilities: {
-      timeSeriesAnalytics: cap('supported', ['arch-data-models', 'data-explorer-overview']),
-      transactionalSystemOfRecord: cap('unknown', ['data-explorer-overview'], 'Do not infer transactional suitability; verify current product documentation and workload requirements.')
-    },
     caveats: ['Not selected solely because data contains timestamps; query and retention patterns matter.'],
     sourceIds: ['arch-data-models', 'data-explorer-overview']
   },
@@ -220,9 +133,6 @@ export const services = [
     id: 'fabric-warehouse', name: 'Fabric Warehouse', family: 'Specialised storage & analytics', kind: 'Analytical warehouse',
     model: 'Relational analytical warehouse', api: 'Fabric SQL analytics', role: 'Analytics store',
     summary: 'Analytical warehouse option within Microsoft Fabric.',
-    capabilities: {
-      analytical: cap('conditional', ['fabric-warehouse'], 'Confirm current service capabilities, region, capacity and workload requirements.')
-    },
     caveats: ['OLAP is distinct from application OLTP; check Fabric capacity and governance fit.'],
     sourceIds: ['fabric-warehouse']
   },
@@ -230,9 +140,6 @@ export const services = [
     id: 'fabric-lakehouse', name: 'Fabric Lakehouse', family: 'Specialised storage & analytics', kind: 'Lakehouse analytics',
     model: 'Files and analytical tables', api: 'Fabric data engineering and analytics', role: 'Analytics store',
     summary: 'Lakehouse option within Microsoft Fabric for analytical data engineering patterns.',
-    capabilities: {
-      analytical: cap('conditional', ['fabric-lakehouse'], 'Confirm workload, format, region, capacity and governance constraints.')
-    },
     caveats: ['A lakehouse is not automatically the operational system of record.'],
     sourceIds: ['fabric-lakehouse']
   },
@@ -240,9 +147,6 @@ export const services = [
     id: 'fabric-eventhouse', name: 'Fabric Eventhouse', family: 'Specialised storage & analytics', kind: 'Real-time analytics',
     model: 'Time-series / event analytics', api: 'Fabric Real-Time Intelligence', role: 'Analytics store',
     summary: 'Fabric analytics option to evaluate for time-oriented and event workloads.',
-    capabilities: {
-      timeSeriesAnalytics: cap('conditional', ['fabric-eventhouse'], 'Confirm current Eventhouse features, capacity, region and ingestion/query needs.')
-    },
     caveats: ['Do not infer operational-database suitability from event analytics features.'],
     sourceIds: ['fabric-eventhouse']
   },
@@ -250,9 +154,6 @@ export const services = [
     id: 'onelake', name: 'OneLake', family: 'Specialised storage & analytics', kind: 'Fabric data lake',
     model: 'Files and analytical data', api: 'Fabric data platform', role: 'Shared analytics storage',
     summary: 'Fabric-wide logical data lake concept, distinct from a transactional database engine.',
-    capabilities: {
-      analyticalStorage: cap('conditional', ['fabric-overview'], 'Check supported workload, capacity, access and governance details.')
-    },
     caveats: ['OneLake is not a database engine or a replacement for every operational store.'],
     sourceIds: ['fabric-overview']
   },
@@ -261,10 +162,6 @@ export const services = [
     model: 'PostgreSQL with distributed tables', api: 'PostgreSQL wire protocol with Citus extensions', role: 'System of record',
     lifecycle: 'retirement-path',
     summary: 'Retirement-path service; not recommended for new projects.',
-    capabilities: {
-      postgresDistributed: cap('supported', ['cosmos-pg-retirement']),
-      newDeployment: cap('unsupported', ['cosmos-pg-retirement'], 'Microsoft states it is on a retirement path and not recommended for new projects.')
-    },
     caveats: ['Do not recommend for a new deployment; for existing deployments consult current retirement and migration guidance.'],
     sourceIds: ['cosmos-pg-retirement']
   },
@@ -273,9 +170,6 @@ export const services = [
     model: 'MariaDB relational engine', api: 'MariaDB protocol', role: 'Legacy system only',
     lifecycle: 'retired-service',
     summary: 'Azure managed service retirement record. MariaDB as a database engine is not retired by this service retirement.',
-    capabilities: {
-      newDeployment: cap('unsupported', ['mariadb-retirement'], 'Do not recommend for new deployments; verify the retirement notice and migration guidance.')
-    },
     caveats: ['The service retirement date was 19 September 2025; this does not mean MariaDB software in general is retired.'],
     sourceIds: ['mariadb-retirement']
   },
@@ -284,10 +178,6 @@ export const services = [
     model: 'In-memory key-value', api: 'Redis-compatible clients', role: 'Cache only',
     lifecycle: 'retirement-path',
     summary: 'Retirement-path product; retirement dates vary by tier.',
-    capabilities: {
-      cache: cap('supported', ['redis-retirement']),
-      newRecommendation: cap('unsupported', ['redis-retirement'], 'For new design, evaluate Azure Managed Redis and check the current retirement guidance.')
-    },
     caveats: ['Basic/Standard/Premium and Enterprise tiers do not share one retirement date.'],
     sourceIds: ['redis-retirement']
   }

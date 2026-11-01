@@ -1,12 +1,12 @@
 import { getQuestions, questions } from './data/questions.js';
 import { scenarios } from './data/scenarios.js';
 import { services, serviceById } from './data/services.js';
-import { sourceById } from './data/sources.js';
+import { sourceById, REVIEWED_LABEL } from './data/sources.js';
 import { ruleById } from './data/rules.js';
 import { evaluate } from './logic/recommendations.js';
 import { families, familyFor } from './data/families.js';
 import { profileFor, profileLabels } from './data/profiles.js';
-import { comparisonRows, capabilityLabels } from './data/comparison.js';
+import { capabilityFor, capabilitySections, capabilityStates, comparisonSections } from './data/capabilities.js';
 import { guidanceFor, performanceGuidance } from './data/performance.js';
 
 const root = document.querySelector('#app');
@@ -17,6 +17,7 @@ const state = {
   answers: {},
   questionIndex: 0,
   compare: new Set(['azure-sql-db', 'postgres-flex']),
+  compareDifferences: false,
   explorerFilter: 'All',
   explorerQuery: '',
   result: null
@@ -121,14 +122,29 @@ function renderAssessment() {
 }
 
 function capabilityStatus(status) {
-  const label = {
-    supported: 'Supported',
-    unsupported: 'Not supported',
-    conditional: 'Conditional',
-    unknown: 'Unknown',
-    'not-applicable': 'Not applicable'
-  }[status] || 'Unknown';
+  const label = capabilityStates[status]?.label;
+  if (!label) throw new Error(`Capability state ${status} is not in the reviewed vocabulary`);
   return `<span class="capability-chip status-${status}">${label}</span>`;
+}
+
+const highlightKeys = ['relationalEngine', 'sqlServerEngine', 'documentModel', 'acidTransactions', 'horizontalScaling', 'multiRegionWrites', 'vectorSearch', 'pointInTimeRestore'];
+
+function capabilityRows(service, keys) {
+  return keys.map((key) => {
+    const label = capabilitySections.flatMap((section) => section.capabilities).find((item) => item.key === key).label;
+    const cell = capabilityFor(service.id, key);
+    return `<div class="capability-row"><span>${escapeHTML(label)}<small>${escapeHTML(cell.summary)}</small></span>${capabilityStatus(cell.status)}</div>`;
+  }).join('');
+}
+
+function capabilityProfile(service) {
+  return capabilitySections.map((section) => {
+    const rows = section.capabilities.map((capability) => {
+      const cell = capabilityFor(service.id, capability.key);
+      return `<div class="capability-row"><span>${escapeHTML(capability.label)}<small>${escapeHTML(cell.summary)}${cell.condition && cell.condition !== cell.summary ? ` ${escapeHTML(cell.status === 'needs-verification' ? `Verify: ${cell.condition}` : cell.condition)}` : ''}</small>${cell.sourceIds.length ? `<small class="profile-sources">${sourceLinks(cell.sourceIds)}</small>` : ''}</span>${capability.descriptive ? '' : capabilityStatus(cell.status)}</div>`;
+    }).join('');
+    return `<h4 class="capability-section-title">${escapeHTML(section.label)}</h4><div class="capability-list">${rows}</div>`;
+  }).join('');
 }
 
 function sourceLinks(ids = []) {
@@ -137,7 +153,7 @@ function sourceLinks(ids = []) {
 }
 
 function reviewDetails(service) {
-  return `<details><summary>Technical profile: compatibility, operations and configuration</summary><dl class="profile-review">${Object.entries(profileFor(service)).map(([name, entry]) => `<div><dt>${escapeHTML(profileLabels[name])}${entry.status ? ` ${capabilityStatus(entry.status)}` : ''}</dt><dd>${escapeHTML(entry.text)} <span class="profile-sources">${sourceLinks(entry.sourceIds)}</span></dd></div>`).join('')}</dl><p>Review snapshot: ${escapeHTML(service.verifiedOn)}. Unknown fields require verification; a source link is not a guarantee for every configuration.</p></details>`;
+  return `<details><summary>Service profile: what it is and how it differs</summary><dl class="profile-review">${Object.entries(profileFor(service)).map(([name, entry]) => `<div><dt>${escapeHTML(profileLabels[name])}</dt><dd>${escapeHTML(entry.text)} <span class="profile-sources">${sourceLinks(entry.sourceIds)}</span></dd></div>`).join('')}</dl><p>Reviewed ${escapeHTML(REVIEWED_LABEL)}. Capability states, conditions and sources are in “Capabilities by section” and Compare Services.</p></details>`;
 }
 
 function familyAttributes(service) {
@@ -165,7 +181,6 @@ function renderArchitecture(result) {
 function renderResults(result) {
   const candidates = result.candidates.map((item, index) => {
     const service = serviceById[item.serviceId];
-    const capEntries = Object.entries(service.capabilities);
     return `<article ${familyAttributes(service)} class="result-card ${index === 0 && result.kind !== 'multi-store' ? 'result-card-primary' : ''}">
       <div class="result-card-top"><div><p class="eyebrow">${escapeHTML(familyFor(service).label)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div>${result.kind === 'multi-store' ? `<span class="candidate-tag">${escapeHTML(service.role)}</span>` : index === 0 ? '<span class="candidate-tag tag-word">Candidate</span>' : '<span class="candidate-tag tag-word candidate-alt">Alternative</span>'}</div>
       <p class="result-reason">${escapeHTML(item.reason)}</p>
@@ -174,7 +189,7 @@ function renderResults(result) {
       ${service.configurationConsiderations?.length ? `<details><summary>Configuration questions</summary><ul>${service.configurationConsiderations.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></details>` : ''}
       ${service.caveats.length ? `<details><summary>Trade-offs and remaining work</summary><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></details>` : ''}
       ${reviewDetails(service)}
-      <div class="capability-list">${capEntries.map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(capabilityLabels[name])}</span>${capabilityStatus(value.status)}</div>`).join('')}</div>
+      <div class="capability-list" aria-label="Key capability states for ${escapeHTML(service.name)}">${capabilityRows(service, highlightKeys)}</div>
       <div class="card-actions"><button class="button button-small" data-action="compare-add" data-service="${escapeHTML(service.id)}">Add to compare</button></div>
     </article>`;
   }).join('');
@@ -216,7 +231,7 @@ function serviceCard(service, compact = false) {
     <p>${escapeHTML(service.summary)}</p>
     <dl class="service-facts"><div><dt>Model</dt><dd>${escapeHTML(service.model)}</dd></div><div><dt>API / protocol</dt><dd>${escapeHTML(service.api)}</dd></div></dl>
     ${service.lifecycle ? `<p class="lifecycle-note">${escapeHTML(service.lifecycle === 'retired-service' ? 'Retired service' : 'Retirement path')} · not recommended for new deployments</p>` : ''}
-    ${!compact ? `<details><summary>Capabilities and caveats</summary><div class="capability-list">${Object.entries(service.capabilities).map(([name, value]) => `<div class="capability-row"><span>${escapeHTML(capabilityLabels[name])}<small>${value.condition ? escapeHTML(value.condition) : ''}</small></span>${capabilityStatus(value.status)}</div>`).join('')}</div><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul><div class="source-list">${sourceLinks(service.sourceIds)}</div></details>` : ''}
+    ${!compact ? `<details><summary>Capabilities by section</summary>${capabilityProfile(service)}</details><details><summary>Trade-offs and caveats</summary><ul>${service.caveats.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul><div class="source-list">${sourceLinks(service.sourceIds)}</div></details>` : ''}
     ${!compact ? reviewDetails(service) : ''}
     <label class="compare-toggle"><input type="checkbox" data-action="compare-toggle" data-service="${escapeHTML(service.id)}" ${selected ? 'checked' : ''} ${!selected && state.compare.size >= 3 ? 'disabled' : ''}><span>${selected ? 'In comparison' : state.compare.size >= 3 ? 'Comparison full — remove a service first' : 'Add to compare'}</span></label>
   </article>`;
@@ -234,13 +249,37 @@ function renderExplorer() {
     ${visible.length ? families.map((family) => { const members = visible.filter((service) => familyFor(service).id === family.id); return members.length ? `<section class="family-section" data-family="${family.id}"><h2>${escapeHTML(family.label)}</h2><div class="service-grid">${members.map((service) => serviceCard(service)).join('')}</div></section>` : ''; }).join('') : '<p class="empty-state">No services match these filters.</p>'}`;
 }
 
+function comparisonCell(cell, service, descriptive) {
+  const detail = [cell.condition && cell.condition !== cell.summary ? `<p>${escapeHTML(cell.status === 'needs-verification' ? `Verify: ${cell.condition}` : cell.condition)}</p>` : '', cell.sourceIds.length ? `<p class="cell-sources">${sourceLinks(cell.sourceIds)}</p>` : ''].join('');
+  return `<td role="cell" data-service="${escapeHTML(service.name)}" class="cell-${escapeHTML(cell.status)}">${descriptive ? '' : capabilityStatus(cell.status)}<p class="cell-summary">${escapeHTML(cell.summary)}</p>${detail ? `<details class="cell-detail"><summary>${cell.status === 'needs-verification' ? 'What to verify' : cell.condition && cell.condition !== cell.summary ? 'Conditions and sources' : 'Sources'}<span class="sr-only"> for ${escapeHTML(service.name)}</span></summary>${detail}</details>` : ''}</td>`;
+}
+
+function comparisonMarkup(selected) {
+  const sameRow = (row) => row.cells.every((cell) => row.descriptive ? cell.summary === row.cells[0].summary : cell.status === row.cells[0].status);
+  return comparisonSections(selected).map((section) => {
+    const rows = state.compareDifferences ? section.rows.filter((row) => !sameRow(row)) : section.rows;
+    const hidden = section.hiddenRows.length ? `<p class="small-note compare-hidden">Not applicable to any selected service: ${section.hiddenRows.map(escapeHTML).join(', ')}.</p>` : '';
+    if (!rows.length) return `<section class="compare-section" aria-labelledby="compare-${section.id}"><h2 id="compare-${section.id}">${escapeHTML(section.label)}</h2><p class="small-note">${state.compareDifferences && section.rows.length ? 'No differences between the selected services in this section.' : 'No capability in this section applies to the selected services.'}</p>${hidden}</section>`;
+    return `<section class="compare-section" aria-labelledby="compare-${section.id}"><h2 id="compare-${section.id}">${escapeHTML(section.label)}</h2><p class="compare-intro">${escapeHTML(section.intro)}</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="${escapeHTML(section.label)} comparison; scroll horizontally if needed"><table role="table" class="comparison-table compare-cols-${selected.length}"><caption class="sr-only">${escapeHTML(section.label)}: ${selected.map((service) => escapeHTML(service.name)).join(' versus ')}</caption>
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Capability</th>${selected.map((service) => `<th role="columnheader" scope="col" ${familyAttributes(service)}>${escapeHTML(service.name)}<small>${escapeHTML(familyFor(service).label)}</small></th>`).join('')}</tr></thead>
+      <tbody role="rowgroup">${rows.map((row) => `<tr role="row"><th role="rowheader" scope="row">${escapeHTML(row.label)}</th>${row.cells.map((cell, index) => comparisonCell(cell, selected[index], row.descriptive)).join('')}</tr>`).join('')}</tbody></table></div>${hidden}</section>`;
+  }).join('');
+}
+
 function renderCompare() {
   const selected = services.filter((service) => state.compare.has(service.id));
-  const table = selected.length >= 2 ? `<div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable service comparison"><table class="comparison-table"><caption>Common technical dimensions followed by meaningful engine-specific requirements.</caption><thead><tr><th scope="col">Dimension</th>${selected.map((service) => `<th scope="col" ${familyAttributes(service)}>${escapeHTML(service.name)}<small>${escapeHTML(familyFor(service).label)}</small></th>`).join('')}</tr></thead><tbody>${comparisonRows(selected).map((row) => `<tr><th scope="row">${escapeHTML(row.label)}</th>${row.cells.map((entry) => `<td>${entry.status ? capabilityStatus(entry.status) : ''}<small>${escapeHTML(entry.text || entry.condition || (entry.status === 'unknown' ? 'Unknown — verification required.' : 'Documented for this engine/API.'))}</small>${sourceLinks(entry.sourceIds)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><h2>Select two or three services to compare</h2><p>Choose services in Explore or from a recommendation.</p></div>';
-  root.innerHTML = `<section class="view-heading"><div><p class="eyebrow">SIDE-BY-SIDE · DOCUMENTED STATES, NOT SCORES</p><h1>Compare Services</h1><p class="lede">Conditional means a feature depends on a version, API, tier, region or configuration. Unknown is not the same as unsupported.</p></div></section>
-    <div class="compare-picker">${services.map((service) => `<label><input type="checkbox" data-action="compare-toggle" data-service="${escapeHTML(service.id)}" ${state.compare.has(service.id) ? 'checked' : ''} ${!state.compare.has(service.id) && state.compare.size >= 3 ? 'disabled' : ''}>${escapeHTML(service.name)}</label>`).join('')}</div>
-    <p class="comparison-legend"><strong>Legend:</strong> Supported: documented scope. Conditional: inspect the stated conditions. Unsupported: documented limitation. Unknown: verification required, not a rejection. Not applicable: a different engine/API contract.</p>${table}
-    <div class="small-note">For a production comparison, verify each candidate’s current feature matrix and the exact target region, engine version, tier, and configuration.</div>`;
+  const body = selected.length >= 2 ? comparisonMarkup(selected) : '<div class="empty-state"><h2>Select two or three services to compare</h2><p>Choose services below, in Explore, or from a recommendation.</p></div>';
+  const picker = families.map((family) => {
+    const members = services.filter((service) => familyFor(service).id === family.id);
+    return members.length ? `<fieldset ${`data-family="${family.id}"`}><legend>${escapeHTML(family.label)}</legend>${members.map((service) => `<label><input type="checkbox" data-action="compare-toggle" data-service="${escapeHTML(service.id)}" ${state.compare.has(service.id) ? 'checked' : ''} ${!state.compare.has(service.id) && state.compare.size >= 3 ? 'disabled' : ''}>${escapeHTML(service.name)}</label>`).join('')}</fieldset>` : '';
+  }).join('');
+  root.innerHTML = `<section class="view-heading"><div><p class="eyebrow">SIDE-BY-SIDE · DOCUMENTED STATES, NOT SCORES</p><h1>Compare Services</h1><p class="lede">Compare two or three services capability by capability. Each cell gives a documented state, a short explanation and its official source.</p></div></section>
+    <details class="compare-picker-wrap" ${selected.length < 2 || state.comparePickerOpen ? 'open' : ''}><summary>Choose services (${selected.length} of 3 selected${selected.length ? `: ${selected.map((service) => escapeHTML(service.name)).join(', ')}` : ''})</summary><div class="compare-picker">${picker}</div></details>
+    <dl class="comparison-legend" aria-label="Capability states">${Object.entries(capabilityStates).map(([status, item]) => `<div><dt>${capabilityStatus(status)}</dt><dd>${escapeHTML(item.meaning)}</dd></div>`).join('')}</dl>
+    ${selected.length >= 2 ? `<label class="compare-filter"><input type="checkbox" data-action="compare-differences" ${state.compareDifferences ? 'checked' : ''}> Show only rows where the documented states differ</label>` : ''}
+    ${body}
+    <p class="small-note">Reviewed ${escapeHTML(REVIEWED_LABEL)}. A documented capability still needs checking against your target region, tier, engine version and configuration. Billing rows describe what to model, not prices.</p>`;
 }
 
 function renderConcepts() {
@@ -263,13 +302,24 @@ function complete() {
   focusHeading();
 }
 
+root.addEventListener('toggle', (event) => {
+  if (event.target.matches?.('.compare-picker-wrap')) state.comparePickerOpen = event.target.open;
+}, true);
+
 root.addEventListener('change', (event) => {
   const target = event.target;
+  if (target.matches('[data-action="compare-differences"]')) {
+    state.compareDifferences = target.checked;
+    renderCompare();
+    root.querySelector('[data-action="compare-differences"]')?.focus();
+    return;
+  }
   if (target.matches('[data-action="compare-toggle"]')) {
     const id = target.dataset.service;
     if (target.checked && state.compare.size < 3) state.compare.add(id);
     else if (!target.checked) state.compare.delete(id);
     else target.checked = false;
+    if (state.view === 'compare') state.comparePickerOpen = true;
     if (state.view === 'explore' || state.view === 'compare') {
       render();
       root.querySelector(`[data-action="compare-toggle"][data-service="${id}"]`)?.focus();

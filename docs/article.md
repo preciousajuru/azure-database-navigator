@@ -110,7 +110,7 @@ I built [Azure Database Navigator](https://github.com/preciousajuru/azure-databa
 
 It asks about workload, persistence, data shape, access patterns, existing engines and required data roles. Migration, retrieval and record-model questions appear when relevant. “Not sure” stays unknown.
 
-It returns a qualified shortlist, a role-based architecture, more questions, or no new database when none is implied. Each candidate has a reason and validation gates. You can inspect the applied rule IDs and official evidence, explore structured profiles and compare common dimensions.
+It returns a qualified shortlist, a role-based architecture, more questions, or no new database when none is implied. Each candidate has a reason and validation gates. You can inspect the applied rule IDs and official evidence, explore structured profiles and compare services capability by capability. Each cell is Supported, Conditional, Not supported, Not applicable or Needs verification, with its official source; it never says simply "Unknown".
 
 There are no scores, guessed prices or compatibility guarantees. It does not select capacity, configure Azure or execute a migration. Answers stay in browser memory; only the theme preference persists.
 

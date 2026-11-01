@@ -1,3 +1,4 @@
+import { capabilityFor } from '../src/data/capabilities.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reachableAnswers } from './reachable-answers.js';
@@ -29,7 +30,7 @@ test('UI-reachable sweep always names missing information and preserves document
         insufficient++;
         assert.ok(result.unknowns.length > 0, JSON.stringify(answers));
       }
-      assert.deepEqual(resultIssues(result, serviceById, sourceById, ruleById), [], JSON.stringify(answers));
+      assert.deepEqual(resultIssues(result, serviceById, sourceById, ruleById, capabilityFor), [], JSON.stringify(answers));
       if (answers.dataShape === 'documents' && ['shortlist', 'primary-candidate'].includes(result.kind) && !result.architecture) {
         documents++;
         for (const id of ['azure-sql-db', 'postgres-flex']) {
@@ -130,7 +131,5 @@ test('descriptive profile fields carry evidence but never a support status', () 
       assert.ok(profile[key].text && profile[key].sourceIds.length);
       assert.equal(profile[key].status, undefined);
     }
-    assert.ok(profile.limits.status);
-    assert.ok(profile.compatibility.status);
   }
 });

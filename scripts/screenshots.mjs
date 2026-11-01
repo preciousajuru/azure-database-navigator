@@ -63,7 +63,7 @@ try {
         await page.getByRole('button', { name: 'Explore Azure Databases', exact: true }).first().click();
         await page.locator('#family-filter').selectOption('Relational');
         const mi = page.locator('.service-card').filter({ has: page.getByRole('heading', { name: 'Azure SQL Managed Instance', exact: true }) });
-        await mi.getByText('Technical profile: compatibility, operations and configuration', { exact: true }).click();
+        await mi.getByText('Service profile: what it is and how it differs', { exact: true }).click();
       } else if (view === 'comparison') {
         await page.getByRole('button', { name: 'Compare Services', exact: true }).click();
       }

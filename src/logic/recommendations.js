@@ -1,5 +1,6 @@
 import { serviceById } from '../data/services.js';
 import { ruleById } from '../data/rules.js';
+import { capabilityFor } from '../data/capabilities.js';
 
 const candidate = (id, reason, caveat = '') => ({ serviceId: id, reason, caveat });
 
@@ -107,7 +108,8 @@ function evaluateRoles(answers) {
     const retrievalKnown = ['keyword', 'vector', 'hybrid'].includes(answers.retrievalType);
     const existing = serviceById[answers.existingService];
     const localOptions = existing ? [existing] : (record?.serviceIds || []).map((id) => serviceById[id]);
-    const vectorOptions = localOptions.filter((service) => ['supported', 'conditional'].includes(service.capabilities.vectorSearch?.status));
+    // Only reviewed supported/conditional cells qualify; needs-verification never establishes a vector option.
+    const vectorOptions = localOptions.filter((service) => ['supported', 'conditional'].includes(capabilityFor(service.id, 'vectorSearch').status));
     if (!record && !wantsFiles) {
       unknowns.push('Identify and confirm the authoritative content source for retrieval. A derived index still needs originals even when this application does not own durable records.');
       architecture.push({ id: 'search-source-gap', role: 'Unresolved source', kind: 'unresolved', label: 'Authoritative retrieval source unresolved', serviceIds: [], boundary: 'Identify the retained external source or original files, its access controls and update/deletion ownership; a search index is not the source of truth.' });
@@ -117,7 +119,7 @@ function evaluateRoles(answers) {
     } else {
       if (answers.retrievalType !== 'keyword' && vectorOptions.length) {
         decisions.push({ id: 'vector-existing-first', outcome: `First test vector retrieval in ${vectorOptions.map((service) => service.name).join(' or ')}. These are alternatives, not extra required stores. Check dimensions, index type/status, filtering, freshness and measured latency.` });
-        vectorOptions.forEach((service) => service.capabilities.vectorSearch.sourceIds.forEach((id) => sourceIds.add(id)));
+        vectorOptions.forEach((service) => capabilityFor(service.id, 'vectorSearch').sourceIds.forEach((id) => sourceIds.add(id)));
       } else if (answers.retrievalType !== 'keyword') {
         unknowns.push('The existing or planned store’s vector capability has not been established; identify its exact service/version and test retrieval before adding a store.');
       }
@@ -233,12 +235,12 @@ export function evaluate(input = {}) {
       if (constraints.has('os-control')) {
         recordRule('sql-os-version');
         candidateList.push(candidate('sql-server-vm', 'A verified OS/file-system control or specific SQL Server version requirement points to the VM operating model.', 'Confirm the exact requirement and plan for VM, SQL Server, patching, backups, high availability and recovery operations.'));
-        exclusions.push({ serviceId: 'azure-sql-db', reason: 'The documented decision tree directs OS/file-system control or a specific SQL Server version requirement to SQL Server on Azure VMs.', sourceIds: ['azure-sql-decision'] });
+        exclusions.push({ serviceId: 'azure-sql-db', reason: 'The documented decision tree directs OS/file-system control or a specific SQL Server version requirement to SQL Server on Azure VMs.', sourceIds: ['azure-sql-decision'], capabilityKeys: ['osControl'] });
       } else if (constraints.has('sql-instance-features')) {
         recordRule('sql-instance-features');
         candidateList.push(candidate('azure-sql-mi', 'The stated SQL Server workload requires one or more instance features identified by Microsoft as Managed Instance decision factors.', 'Verify each required feature, engine version, migration path, networking and target-region availability.'));
         candidateList.push(candidate('sql-server-vm', 'Keep SQL Server on Azure VMs in the shortlist if feature testing finds a requirement beyond Managed Instance.', 'A VM increases operating-system and database administration responsibilities.'));
-        exclusions.push({ serviceId: 'azure-sql-db', reason: 'The workload explicitly requires SQL Server instance features identified by the Microsoft decision tree; verify exact feature availability before final selection.', sourceIds: ['azure-sql-decision'] });
+        exclusions.push({ serviceId: 'azure-sql-db', reason: 'The workload explicitly requires SQL Server instance features identified by the Microsoft decision tree; verify exact feature availability before final selection.', sourceIds: ['azure-sql-decision'], capabilityKeys: ['sqlAgent', 'clrSupport', 'crossDatabaseQuery'] });
       } else {
         recordRule('sql-existing-engine');
         candidateList.push(candidate('azure-sql-db', 'The existing SQL Server engine is relevant evidence, but no incompatible instance or OS feature has been reported.', 'Run a feature assessment; an existing engine does not by itself determine the target service.'));

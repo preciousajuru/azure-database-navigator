@@ -8,8 +8,10 @@ Azure Database Navigator is a client-only static application. It does not call A
 
 | Concern | Source |
 |---|---|
-| Service/API/engine catalogue and capability states | `src/data/services.js` |
-| Service-specific profiles / comparison dimensions | `src/data/profiles.js`, `src/data/comparison.js` |
+| Service/API/engine catalogue (identity, role, caveats) | `src/data/services.js` |
+| Capability taxonomy, five-state vocabulary, comparison sections and completeness check | `src/data/capabilities.js` |
+| Reviewed capability matrix (every service × every capability, with sources) | `src/data/capability-matrix.js` |
+| Narrative service profiles (what it is, how it differs, lifecycle) | `src/data/profiles.js` |
 | Family taxonomy / contrast-tested theme tokens | `src/data/families.js` |
 | Performance concept / relevant result guidance | `src/data/performance.js` |
 | Dated evidence register | `src/data/sources.js` |
@@ -21,6 +23,10 @@ Azure Database Navigator is a client-only static application. It does not call A
 | Responsive layout, themes and reduced motion | `styles.css` |
 
 The policy consumes categorical requirements and returns a bounded outcome, candidates, caveats, exclusions, unknowns, changes and source/rule references. It uses no numerical ranking or confidence score. The UI renders the same data used by tests and removes answers to hidden branches when requirements change.
+
+## One evidence base for comparison and recommendations
+
+Comparison, explorer and recommendations read the same capability matrix. Each cell is one of five states: Supported, Conditional, Not supported, Not applicable or Needs verification. Descriptive rows (transaction scope, region/tier conditions, billing model) carry text without a state. A missing cell is a data-quality defect that `npm run check` rejects; it is never displayed as a state. Every hard exclusion names the capability keys it relies on, and validation requires at least one of them to be documented as Not supported for the excluded service. Vector-retrieval options come only from Supported or Conditional cells, so a Needs-verification cell can neither select nor exclude a service.
 
 ## Authoritative and derived data
 

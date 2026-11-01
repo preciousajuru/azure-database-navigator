@@ -14,7 +14,8 @@ An independent, evidence-led educational guide to choosing data stores and datab
 - Document, distributed and API offerings: Cosmos DB for NoSQL, Cosmos DB for MongoDB RU-based, Azure DocumentDB (the current name for the vCore-based offering), other Cosmos APIs and Apache Cassandra options.
 - Cache, file/object, search and analytics roles: Azure Managed Redis, Blob Storage, Table Storage, Data Lake Storage Gen2, Azure AI Search, Azure Data Explorer, Fabric Warehouse/Lakehouse/Eventhouse and OneLake.
 - Multi-store designs, migration compatibility, service lifecycles, RPO/RTO, residency, network and operational questions.
-- Accessible role/link architecture diagrams, grouped family-labelled explorer profiles, common-dimension comparisons and sourced performance guidance.
+- Accessible role/link architecture diagrams, grouped family-labelled explorer profiles, a sectioned capability comparison and sourced performance guidance.
+- A reviewed capability matrix: 24 services × 27 capabilities in nine sections (engine, transactions, queries, scaling, availability, security, migration, operations, cost). Every cell is Supported, Conditional, Not supported, Not applicable or Needs verification, with a short explanation and dated official source. There is no "Unknown" state; the explorer, comparison and recommendation exclusions read the same matrix.
 - Existing-first vector retrieval, qualified graph assessment and explicit relational JSON alternatives, without automatic extra-store recommendations.
 
 Document shortlists retain relational JSON assessment alternatives at any geography. Confirmed source-store retrieval can conclude that no new database is selected; genuinely insufficient outcomes name missing requirements. Technical descriptions are separated from support states, and performance evidence is scoped to the candidate engines and retrieval roles. A wire protocol is not feature parity; JSON is not a Cosmos DB shortcut; global users do not automatically require multi-region writes; caches and indexes do not silently become systems of record.
@@ -43,7 +44,7 @@ npm run build
 npm run test:browser
 ```
 
-Chromium workflows run under `/azure-database-navigator/` at 375, 768, 1024 and 1440 px, in both themes. They cover assessment branching, back/edit/restart, stale-answer removal, every worked scenario, explorer filters, comparison limits, documentation, keyboard/focus, reduced motion, horizontal overflow and automated WCAG A/AA checks. Automated checks do not replace a real screen-reader review or testing other browser engines.
+Chromium workflows run under `/azure-database-navigator/` at 375, 768, 1024 and 1440 px, in both themes. They cover assessment branching, back/edit/restart, stale-answer removal, every worked scenario, explorer filters, comparison sections, legend, differences filter, stacked mobile cells, comparison limits, documentation, keyboard/focus, reduced motion, horizontal overflow and automated WCAG A/AA checks. Automated checks do not replace a real screen-reader review or testing other browser engines.
 
 `npm run screenshots` captures actual Chromium renders into `screenshots/` using an explicit preview-only bootstrap. Run `npm run build` afterwards to create and validate the complete publication build. Screenshots are not mocks; see [capture provenance](docs/screenshots.md).
 

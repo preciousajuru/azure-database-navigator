@@ -5,7 +5,7 @@ import { services, serviceById } from '../src/data/services.js';
 import { sourceById } from '../src/data/sources.js';
 import { families, familyFor } from '../src/data/families.js';
 import { profileFor, profileLabels } from '../src/data/profiles.js';
-import { comparisonRows, capabilityLabels } from '../src/data/comparison.js';
+import { comparisonSections, capabilityFor, capabilityKeys } from '../src/data/capabilities.js';
 import { guidanceFor } from '../src/data/performance.js';
 import { evaluate } from '../src/logic/recommendations.js';
 
@@ -28,7 +28,7 @@ test('family tokens are implemented and meet text and diagram line contrast in b
   assert.ok(contrast('#58687b', '#ffffff') >= 3);
   assert.ok(contrast('#b0bdca', '#18222e') >= 3);
   assert.ok(services.every((service) => familyFor(service)));
-  assert.ok(services.every((service) => Object.keys(service.capabilities).every((key) => capabilityLabels[key])));
+  assert.ok(services.every((service) => capabilityKeys.every((key) => capabilityFor(service.id, key).status !== 'missing')));
   assert.equal(familyFor(serviceById['table-storage']).id, 'distributed');
   assert.equal(familyFor(serviceById.onelake).id, 'objects');
 });
@@ -36,23 +36,24 @@ test('family tokens are implemented and meet text and diagram line contrast in b
 test('all profiles have common fields and registered evidence with no generic core boilerplate', () => {
   for (const service of services) {
     const profile = profileFor(service);
-    assert.deepEqual(Object.keys(profile).sort(), Object.keys(profileLabels).sort());
+    assert.ok(Object.keys(profile).every((key) => profileLabels[key]));
+    assert.ok(['whatItIs', 'model', 'engineApi', 'role', 'differsFrom', 'lifecycle'].every((key) => profile[key]), service.id);
     for (const entry of Object.values(profile)) {
-      assert.ok(entry.text && (!entry.status || entry.condition));
+      assert.ok(entry.text && !entry.status);
       assert.ok(entry.sourceIds.length && entry.sourceIds.every((id) => sourceById[id]), service.id);
     }
   }
   assert.match(profileFor(serviceById['azure-sql-mi']).differsFrom.text, /SQL Agent/);
-  assert.match(profileFor(serviceById['postgres-flex']).recovery.text, /Asynchronous/);
+  assert.match(capabilityFor('postgres-flex', 'readReplicas').summary, /asynchronous/i);
 });
 
-test('comparison distinguishes all five states and engine identities without contradictory unknowns', () => {
-  const rows = comparisonRows(services);
-  const states = new Set(rows.flatMap((row) => row.cells.map((cell) => cell.status)).filter(Boolean));
-  assert.deepEqual([...states].sort(), ['conditional', 'not-applicable', 'supported', 'unknown', 'unsupported']);
-  const engine = comparisonRows([serviceById['azure-sql-db'], serviceById['postgres-flex']]).find((row) => row.label === 'Engine / API');
-  assert.ok(engine.cells.every((cell) => cell.status === undefined));
-  assert.notEqual(engine.cells[0].text, engine.cells[1].text);
+test('comparison distinguishes the documented states and engine identities without Unknown', () => {
+  const rows = comparisonSections(services).flatMap((section) => section.rows);
+  const states = new Set(rows.flatMap((row) => row.cells.map((cell) => cell.status)));
+  for (const state of ['conditional', 'not-applicable', 'supported', 'unsupported']) assert.ok(states.has(state), state);
+  assert.ok(!states.has('unknown') && !states.has('missing'));
+  const engine = comparisonSections([serviceById['azure-sql-db'], serviceById['postgres-flex']]).find((section) => section.id === 'engine').rows.find((row) => row.key === 'sqlServerEngine');
+  assert.deepEqual(engine.cells.map((cell) => cell.status), ['supported', 'not-applicable']);
 });
 
 test('global JSON preserves primary distribution candidate and explicit relational assessment alternatives', () => {

@@ -8,7 +8,7 @@ This project is an independent educational guide to data-store models and Azure 
 
 Each source in `src/data/sources.js` has a stable local ID, title, publisher, canonical URL, source publication/update date (or a clear “continuously maintained” label), verification date, evidence summary and limitation. Service profiles and capability records reference those IDs.
 
-`supported` is used only when the cited source documents the capability in scope. `unsupported` requires explicit evidence. `conditional` captures dependencies such as service tier, API, version, region, configuration or a separate compatibility test. `unknown` is the correct state when the source set does not prove either support or non-support.
+`supported` is used only when the cited source documents the capability in scope. `unsupported` requires explicit evidence. `conditional` captures dependencies such as service tier, API, version, region, configuration or a separate compatibility test. `not-applicable` means the capability does not meaningfully apply to the service's engine, API or role. `needs-verification` is used when current official documentation does not settle the answer; the cell then states exactly what to verify and where. There is no `unknown` state: a missing cell is a data-quality defect rejected by `npm run check`.
 
 An official overview may describe a wire protocol or compatibility at a high level. This project still requires users to validate exact commands, driver versions, transaction behaviour and migration steps. Feature matrices and configuration documentation take precedence over a broad summary.
 

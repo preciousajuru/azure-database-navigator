@@ -9,9 +9,9 @@ The captures were refreshed after correcting badge sizing: single-word candidate
 | `assessment-midflow-light-1024.png` | Question 6, relational access-pattern answer actively selected | 1024 px / light |
 | `result-light-1440.png` | SQL Server migration shortlist; why, validation gates, unknowns and evidence | 1440 px / light |
 | `result-dark-375.png` | The same full result stacked on mobile | 375 px / dark |
-| `explorer-light-1440.png` | Relational family group, Managed Instance technical profile expanded | 1440 px / light |
-| `comparison-light-1440.png` | SQL Database/PostgreSQL, common dimensions and five-state legend | 1440 px / light |
-| `comparison-dark-768.png` | The same horizontally scrollable comparison at tablet width | 768 px / dark |
+| `explorer-light-1440.png` | Relational family group, Managed Instance service profile expanded | 1440 px / light |
+| `comparison-light-1440.png` | SQL Database/PostgreSQL, nine capability sections and the five-state legend | 1440 px / light |
+| `comparison-dark-768.png` | The same sectioned comparison at tablet width | 768 px / dark |
 | `architecture-light-1440.png` | RAG fixture: retained PostgreSQL, original files, derived search index and boundaries | 1440 px / light |
 | `architecture-dark-375.png` | The same diagram stacked, with labelled directional links and failure notes | 375 px / dark |
 

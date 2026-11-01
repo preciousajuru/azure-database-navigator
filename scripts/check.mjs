@@ -11,6 +11,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import { profileFor, profileLabels } from '../src/data/profiles.js';
 import { familyFor } from '../src/data/families.js';
 import { performanceGuidance } from '../src/data/performance.js';
+import { capabilityFor, capabilityKeys, catalogueGaps } from '../src/data/capabilities.js';
+import { capabilityMatrix } from '../src/data/capability-matrix.js';
 
 const errors = [];
 const unique = (items, label) => {
@@ -43,23 +45,17 @@ for (const source of sources) {
 for (const service of services) {
   if (!familyFor(service)) errors.push(`Missing family: ${service.id}`);
   for (const [key, entry] of Object.entries(profileFor(service))) {
-    if (!profileLabels[key] || !entry.text || entry.status && !entry.condition) errors.push(`Incomplete structured profile: ${service.id}.${key}`);
+    if (!profileLabels[key] || !entry.text) errors.push(`Incomplete structured profile: ${service.id}.${key}`);
     for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Profile ${service.id}.${key} missing source: ${id}`);
   }
   if (!service.summary || !service.model || !service.api || !service.role) errors.push(`Service ${service.id} has incomplete profile fields.`);
   if (!service.sourceIds.length) errors.push(`Service ${service.id} has no evidence source.`);
   for (const id of service.sourceIds) if (!sourceById[id]) errors.push(`Service ${service.id} references missing source ${id}.`);
-  for (const [capability, value] of Object.entries(service.capabilities)) {
-    if (!['supported', 'unsupported', 'conditional', 'unknown', 'not-applicable'].includes(value.status)) {
-      errors.push(`Service ${service.id} capability ${capability} has invalid status ${value.status}.`);
-    }
-    if (value.status !== 'unknown' && value.sourceIds.length === 0) errors.push(`Service ${service.id} capability ${capability} needs evidence.`);
-    if (value.status === 'conditional' && !value.condition) errors.push(`Conditional capability ${service.id}.${capability} lacks configuration boundaries.`);
-    for (const id of value.sourceIds) if (!sourceById[id]) errors.push(`Capability ${service.id}.${capability} references missing source ${id}.`);
-    if (['supported', 'unsupported', 'conditional'].includes(value.status) && value.sourceIds.length && value.sourceIds.every((id) => sourceById[id] && isHubSource(sourceById[id]))) errors.push(`Hub-only capability evidence: ${service.id}.${capability}`);
+  if (service.lifecycle === 'retired-service' && capabilityFor(service.id, 'newDeployment').status !== 'unsupported') {
+    errors.push(`Retired service ${service.id} is not documented as unavailable for new deployments.`);
   }
-  if (service.lifecycle === 'retired-service' && service.capabilities.newDeployment?.status !== 'unsupported') {
-    errors.push(`Retired service ${service.id} is not explicitly excluded for new deployments.`);
+  if (service.lifecycle === 'retirement-path' && !['unsupported', 'conditional'].includes(capabilityFor(service.id, 'newDeployment').status)) {
+    errors.push(`Retirement-path service ${service.id} must state its new-deployment condition.`);
   }
   for (const rule of rules) {
     if (!rule.conditions || !rule.configuration || !rule.limitations || !rule.test || !rule.sourceIds.length) errors.push(`Rule ${rule.id} is missing decision metadata/evidence.`);
@@ -77,13 +73,22 @@ for (const name of await readdir(new URL('../docs/', import.meta.url))) {
 for (const entry of performanceGuidance) for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Missing performance source: ${id}`);
 for (const recordModel of ['relational', 'documents', 'existing', 'unknown']) {
   const result = evaluate({ workload: 'mixed', dataShape: 'mixed', dataKinds: ['records', 'files', 'search', 'cache'], durable: 'yes', recordModel, retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok' });
-  errors.push(...resultIssues(result, serviceById, sourceById, ruleById));
+  errors.push(...resultIssues(result, serviceById, sourceById, ruleById, capabilityFor));
   if (result.architecture.filter((node) => node.id === 'records').length !== (recordModel === 'unknown' ? 0 : 1)) errors.push(`Invalid record role: ${recordModel}`);
 }
-for (const id of ['azure-sql-db', 'postgres-flex', 'cosmos-nosql', 'azure-documentdb', 'managed-redis', 'ai-search']) {
-  if (!serviceById[id].capabilities.vectorSearch?.sourceIds.length) errors.push(`Missing vector evidence: ${id}`);
+errors.push(...catalogueGaps(services.map((service) => service.id)));
+for (const serviceId of Object.keys(capabilityMatrix)) if (!serviceById[serviceId]) errors.push(`Capability matrix has unregistered service ${serviceId}`);
+for (const service of services) {
+  for (const key of capabilityKeys) {
+    const cell = capabilityFor(service.id, key);
+    for (const id of cell.sourceIds || []) if (!sourceById[id]) errors.push(`Capability ${service.id}.${key} references missing source ${id}.`);
+    if (['supported', 'unsupported', 'conditional'].includes(cell.status) && cell.sourceIds?.length && cell.sourceIds.every((id) => sourceById[id] && isHubSource(sourceById[id]))) errors.push(`Hub-only capability evidence: ${service.id}.${key}`);
+    if (/\bunknown\b/i.test(`${cell.summary} ${cell.condition || ''}`)) errors.push(`Capability ${service.id}.${key} uses "unknown" wording; state what to verify instead.`);
+  }
 }
-if (!serviceById['cosmos-other-apis'].capabilities.graphTraversal?.sourceIds.includes('gremlin-overview')) errors.push('Missing graph evidence');
+for (const id of ['azure-sql-db', 'postgres-flex', 'cosmos-nosql', 'azure-documentdb', 'managed-redis', 'ai-search']) {
+  if (!['supported', 'conditional'].includes(capabilityFor(id, 'vectorSearch').status)) errors.push(`Missing vector evidence: ${id}`);
+}
 
 const questionValues = new Set(questions.map((question) => question.id));
 for (const scenario of scenarios) {
@@ -96,7 +101,7 @@ for (const scenario of scenarios) {
       if (!question.options.some((option) => option.value === value)) errors.push(`Scenario ${scenario.id} has an invalid ${id} answer: ${value}`);
     }
   }
-  for (const issue of resultIssues(evaluate(scenario.answers), serviceById, sourceById, ruleById)) errors.push(`Scenario ${scenario.id}: ${issue}`);
+  for (const issue of resultIssues(evaluate(scenario.answers), serviceById, sourceById, ruleById, capabilityFor)) errors.push(`Scenario ${scenario.id}: ${issue}`);
 }
 
 if (errors.length) {

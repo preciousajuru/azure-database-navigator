@@ -1,3 +1,4 @@
+import { capabilityFor } from '../src/data/capabilities.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
@@ -79,8 +80,8 @@ test('verification policy rejects stale, missing, impossible and future review d
 });
 
 test('every fixture has complete results and hard exclusions carry actual source references', () => {
-  for (const scenario of scenarios) assert.deepEqual(resultIssues(evaluate(scenario.answers), serviceById, sourceById, ruleById), [], scenario.id);
+  for (const scenario of scenarios) assert.deepEqual(resultIssues(evaluate(scenario.answers), serviceById, sourceById, ruleById, capabilityFor), [], scenario.id);
   const broken = evaluate(scenarios[1].answers);
   broken.exclusions[0].sourceIds = [];
-  assert.ok(resultIssues(broken, serviceById, sourceById, ruleById).some((issue) => /hard exclusion/.test(issue)));
+  assert.ok(resultIssues(broken, serviceById, sourceById, ruleById, capabilityFor).some((issue) => /hard exclusion/.test(issue)));
 });

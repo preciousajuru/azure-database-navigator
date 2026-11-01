@@ -7,7 +7,7 @@ export function verificationIssue(date, asOf = new Date()) {
   return null;
 }
 
-export function resultIssues(result, serviceById, sourceById, ruleById) {
+export function resultIssues(result, serviceById, sourceById, ruleById, capabilityFor) {
   const errors = [];
   if (!['primary-candidate', 'shortlist', 'multi-store', 'no-database-needed', 'insufficient-information', 'no-verified-match'].includes(result.kind)) errors.push('Invalid outcome');
   if (!result.title) errors.push('Missing result title');
@@ -23,6 +23,9 @@ export function resultIssues(result, serviceById, sourceById, ruleById) {
   }
   for (const exclusion of result.exclusions) {
     if (!exclusion.reason || !exclusion.sourceIds?.length || exclusion.sourceIds.some((id) => !sourceById[id])) errors.push(`Unexplained hard exclusion: ${exclusion.serviceId}`);
+    // Every hard exclusion must trace to at least one capability documented as unsupported; missing or unverified evidence never excludes.
+    if (capabilityFor && !exclusion.capabilityKeys?.some((key) => capabilityFor(exclusion.serviceId, key).status === 'unsupported')) errors.push(`Exclusion not traced to a documented unsupported capability: ${exclusion.serviceId}`);
+    if (capabilityFor && exclusion.capabilityKeys?.some((key) => ['needs-verification', 'missing'].includes(capabilityFor(exclusion.serviceId, key).status))) errors.push(`Exclusion relies on unverified capability: ${exclusion.serviceId}`);
   }
   for (const id of result.sourceIds) if (!sourceById[id]) errors.push(`Missing source: ${id}`);
   for (const id of result.ruleIds) if (!ruleById[id]) errors.push(`Missing rule: ${id}`);

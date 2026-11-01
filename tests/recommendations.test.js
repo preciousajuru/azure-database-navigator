@@ -1,3 +1,4 @@
+import { capabilityFor } from '../src/data/capabilities.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluate } from '../src/logic/recommendations.js';
@@ -85,7 +86,8 @@ test('MongoDB options remain distinct with feature-level validation caveats', ()
 test('Cassandra engine and Cassandra API remain separate options with a version gate', () => {
   const result = evaluate({ workload: 'migration', dataShape: 'mixed', engine: 'cassandra', geography: 'single-region', recovery: 'important' });
   assert.deepEqual(ids(result), ['cosmos-other-apis', 'managed-cassandra']);
-  assert.equal(serviceById['managed-cassandra'].capabilities.cassandraCompatibility.status, 'conditional');
+  assert.equal(capabilityFor('managed-cassandra', 'protocolCompatibility').status, 'supported');
+  assert.notEqual(capabilityFor('cosmos-other-apis', 'protocolCompatibility').status, 'not-applicable');
   assert.ok(serviceById['managed-cassandra'].sourceIds.includes('cassandra-managed-overview'));
   assert.match(result.candidates.find((item) => item.serviceId === 'managed-cassandra').caveat, /version 5\.0/);
 });
@@ -197,7 +199,7 @@ test('high write activity alone does not turn relational OLTP into event analyti
 test('consistency and transaction scope are not interchangeable', () => {
   const result = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'documents', accessPattern: 'document-aggregate', constraints: ['hard-consistency'], consistency: 'aggregate-atomic' });
   assert.deepEqual(ids(result), ['cosmos-nosql']);
-  assert.match(serviceById['cosmos-nosql'].capabilities.transactionalBoundary.condition, /logical partition/);
+  assert.match(capabilityFor('cosmos-nosql', 'transactionScope').summary, /logical partition/i);
   const business = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'documents', accessPattern: 'document-aggregate', consistency: 'business-atomic' });
   assert.ok(ids(business).includes('azure-sql-db'));
 });
