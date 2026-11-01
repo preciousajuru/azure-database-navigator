@@ -6,7 +6,7 @@ import { rules } from '../src/data/rules.js';
 import { ruleById } from '../src/data/rules.js';
 import { serviceById } from '../src/data/services.js';
 import { evaluate } from '../src/logic/recommendations.js';
-import { verificationIssue, resultIssues } from './validation.mjs';
+import { verificationIssue, resultIssues, evidenceLinkIssues, isHubSource } from './validation.mjs';
 import { readFile } from 'node:fs/promises';
 
 const errors = [];
@@ -48,6 +48,7 @@ for (const service of services) {
     if (value.status !== 'unknown' && value.sourceIds.length === 0) errors.push(`Service ${service.id} capability ${capability} needs evidence.`);
     if (value.status === 'conditional' && !value.condition) errors.push(`Conditional capability ${service.id}.${capability} lacks configuration boundaries.`);
     for (const id of value.sourceIds) if (!sourceById[id]) errors.push(`Capability ${service.id}.${capability} references missing source ${id}.`);
+    if (['supported', 'unsupported', 'conditional'].includes(value.status) && value.sourceIds.length && value.sourceIds.every((id) => sourceById[id] && isHubSource(sourceById[id]))) errors.push(`Hub-only capability evidence: ${service.id}.${capability}`);
   }
   if (service.lifecycle === 'retired-service' && service.capabilities.newDeployment?.status !== 'unsupported') {
     errors.push(`Retired service ${service.id} is not explicitly excluded for new deployments.`);
@@ -61,6 +62,17 @@ for (const service of services) {
     for (const id of rule.sourceIds) if (!sourceById[id]) errors.push(`Rule ${rule.id} references missing source ${id}.`);
   }
 }
+
+errors.push(...evidenceLinkIssues(await readFile(new URL('../docs/article.md', import.meta.url), 'utf8'), sources));
+for (const recordModel of ['relational', 'documents', 'existing', 'unknown']) {
+  const result = evaluate({ workload: 'mixed', dataShape: 'mixed', dataKinds: ['records', 'files', 'search', 'cache'], durable: 'yes', recordModel, retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok' });
+  errors.push(...resultIssues(result, serviceById, sourceById, ruleById));
+  if (result.architecture.filter((node) => node.id === 'records').length !== (recordModel === 'unknown' ? 0 : 1)) errors.push(`Invalid record role: ${recordModel}`);
+}
+for (const id of ['azure-sql-db', 'postgres-flex', 'cosmos-nosql', 'azure-documentdb', 'managed-redis', 'ai-search']) {
+  if (!serviceById[id].capabilities.vectorSearch?.sourceIds.length) errors.push(`Missing vector evidence: ${id}`);
+}
+if (!serviceById['cosmos-other-apis'].capabilities.graphTraversal?.sourceIds.includes('gremlin-overview')) errors.push('Missing graph evidence');
 
 const questionValues = new Set(questions.map((question) => question.id));
 for (const scenario of scenarios) {

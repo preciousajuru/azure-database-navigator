@@ -1,5 +1,9 @@
 # Source register
 
+The [Compute Navigator repository](https://github.com/preciousajuru/azure-compute-navigator) and [application](https://preciousajuru.github.io/azure-compute-navigator/) are design inspiration only. No source was copied.
+
+The structured register in `src/data/sources.js` now includes specific service/feature pages for vector retrieval, Gremlin, Fabric workloads, Table Storage and ADLS. Hub pages cannot be the only evidence for a material capability. Article evidence links must match registered URLs; non-evidence repository and licence references are allow-listed. All additions were read on 1 November 2026; preview/index conditions remain explicit.
+
 The register is the evidence trail used by the app. Verification date: **1 November 2026**. IDs are stable references in the data model. “Continuously maintained” means the source does not expose a single publication date in the captured reference; it does not mean this project checks the page at runtime.
 
 | ID | Source | Published/updated | What it supports | Limitation |

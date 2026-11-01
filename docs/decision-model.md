@@ -1,5 +1,9 @@
 # Decision model
 
+Composite assessments use one `records` node, never one node per engine alternative. Each node has `id`, `role`, `kind` (authoritative, derived, cache, retained or unresolved), `label`, `serviceIds` and a failure boundary. New records invoke the same single-store engine rules; relational alternatives stay alternatives. Retained stores carry no selected service IDs. Unknown record models produce an explicit unresolved item, not SQL. Files are a distinct authoritative role.
+
+Vector retrieval first checks the existing/planned store using its verified capability conditions. Unknown retrieval does not add a store. AI Search requires an explicit separate-index justification and acceptable indexing lag. Real-time freshness triggers source-store validation, not an implied synchronous copied index. The `vector-existing-first`, `authoritative-role` and `graph-traversal` rules expose these boundaries.
+
 ## Purpose and boundaries
 
 The navigator is an educational first-pass filter for Azure data roles, not an automated architect. It records no confidence percentage, numeric rank, capacity estimate, price, compliance result or claim of current service availability. Candidate outcomes are explainable and keep unresolved requirements visible.

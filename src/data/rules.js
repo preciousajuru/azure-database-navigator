@@ -33,10 +33,10 @@ export const rules = [
   },
   {
     id: 'cassandra-feature-validation',
-    serviceIds: ['cosmos-other-apis', 'cosmos-cassandra'],
+    serviceIds: ['cosmos-other-apis', 'managed-cassandra'],
     configuration: 'Compare the API offering with native Cassandra; verify version, topology, operations and migration.',
     conditions: 'An existing workload has an Apache Cassandra engine/client contract.',
-    sourceIds: ['cosmos-overview', 'cassandra-managed-overview'],
+    sourceIds: ['cosmos-cassandra-api', 'cassandra-managed-overview'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'A Cassandra API is not the native Cassandra engine or a guarantee of feature parity.',
     test: 'Cassandra engine and Cassandra API remain separate options with a version gate'
@@ -146,24 +146,24 @@ export const rules = [
     serviceIds: ['data-explorer', 'fabric-eventhouse'],
     configuration: 'Capacity, ingestion, retention, region and query settings are not selected.',
     conditions: 'High-ingest telemetry or time-window analytics is a stated primary workload.',
-    sourceIds: ['arch-data-models', 'data-explorer-overview', 'fabric-overview'],
+    sourceIds: ['data-explorer-overview', 'fabric-eventhouse'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'A time-series data shape alone does not establish ingestion, region, retention or product fit.',
     test: 'High-volume telemetry with time-window analysis'
   },
   {
     id: 'search-separated-role',
-    serviceIds: ['blob-storage', 'ai-search', 'azure-sql-db'],
+    serviceIds: ['blob-storage', 'ai-search'],
     configuration: 'Source, state and index are separate roles; sync, index lag, reindexing and recovery are not configured.',
-    conditions: 'Search/retrieval is explicit; source files and durable state are included only when present.',
-    sourceIds: ['arch-data-models', 'blob-overview', 'ai-search-overview', 'azure-sql-family'],
+    conditions: 'A separate managed index is explicitly justified and source-to-index lag is acceptable; source files are included only when present.',
+    sourceIds: ['vector-selection', 'blob-overview', 'ai-search-overview'],
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'The search index is derived; do not assume vector search or a transactional database is necessary.',
     test: 'RAG separates object source, search index and optional durable application state'
   },
   {
     id: 'cache-not-record',
-    serviceIds: ['managed-redis', 'azure-sql-db'],
+    serviceIds: ['managed-redis'],
     configuration: 'Cache topology, expiry, invalidation and durable record configuration are not selected.',
     conditions: 'Cache/transient-state role is explicit; a new durable record service is added only when explicitly required and an existing candidate does not already fill that role.',
     sourceIds: ['managed-redis-overview', 'arch-data-models'],
@@ -200,6 +200,28 @@ export const rules = [
     verifiedOn: RULE_REVIEWED_ON,
     limitations: 'Recheck current lifecycle and dates; migration advice differs by tier and deployment.',
     test: 'retirement-path and retired services never appear as new candidates'
+  },
+  {
+    id: 'authoritative-role', serviceIds: [], configuration: 'One record node carries platform alternatives; a retained store is not a candidate.',
+    conditions: 'A composite workload states its record role/model; assess it by the same single-store rules without selecting one engine.',
+    sourceIds: ['arch-data-models', 'arch-data-considerations'], verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'Unknown record requirements remain unresolved; copies are not automatically transactionally consistent.',
+    test: 'record-role matrix preserves exactly one authoritative record node'
+  },
+  {
+    id: 'vector-existing-first', serviceIds: ['azure-sql-db', 'postgres-flex', 'cosmos-nosql', 'azure-documentdb', 'managed-redis', 'ai-search'],
+    configuration: 'Retrieve in the source store first where verified; dimension/index/tier/version/region remain validation gates.',
+    conditions: 'Vector or hybrid retrieval is explicit; no store is added for unknown retrieval requirements.',
+    sourceIds: ['vector-selection', 'sql-vector', 'postgres-vector', 'cosmos-vector', 'documentdb-vector', 'redis-vector', 'search-vector'],
+    verifiedOn: RULE_REVIEWED_ON, limitations: 'Capabilities and preview index status do not prove workload performance or freshness.',
+    test: 'vector retrieval checks existing stores before adding an index'
+  },
+  {
+    id: 'graph-traversal', serviceIds: ['cosmos-other-apis'], configuration: 'Assess Apache Gremlin API only; do not confuse it with native engines or OLAP graph.',
+    conditions: 'Graph model, relationship traversal or graph query requirements are explicit.',
+    sourceIds: ['gremlin-overview', 'fabric-graph', 'arch-data-models'], verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'Size/depth/latency/TinkerPop/region/lifecycle need verification. Fabric graph is further assessment guidance, not a selected OLTP replacement.',
+    test: 'graph traversal has qualified evidence and no universal graph promise'
   }
 ];
 

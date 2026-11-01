@@ -69,7 +69,7 @@ The announcement remains unpublished and makes no live-site or impact claim. Pub
 
 ## Project boundaries
 
-Azure Database Navigator is independent and is not affiliated with or endorsed by Microsoft. Azure product names and Microsoft Learn sources belong to their respective owners. The Azure Compute Navigator is linked as design inspiration only; no code was copied. This project has its own catalogue, rules and tests.
+Azure Database Navigator is independent and is not affiliated with or endorsed by Microsoft. Azure product names and Microsoft Learn sources belong to their respective owners. The [Azure Compute Navigator repository](https://github.com/preciousajuru/azure-compute-navigator) and [application](https://preciousajuru.github.io/azure-compute-navigator/) are design inspiration and the companion for choosing where an application runs; no code was copied. This project has its own catalogue, rules and tests.
 
 Source code is MIT-licensed. Original article and documentation text is licensed under CC BY 4.0; see [content licensing](docs/CONTENT-LICENSE.md).
 

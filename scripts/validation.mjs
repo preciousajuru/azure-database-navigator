@@ -26,6 +26,25 @@ export function resultIssues(result, serviceById, sourceById, ruleById) {
   for (const id of result.sourceIds) if (!sourceById[id]) errors.push(`Missing source: ${id}`);
   for (const id of result.ruleIds) if (!ruleById[id]) errors.push(`Missing rule: ${id}`);
   if (!result.changes.length) errors.push('Missing result-change explanation');
-  if (result.kind === 'multi-store' && (!result.architecture?.length || !result.architectureLinks?.length)) errors.push('Combined architecture lacks roles or failure boundaries');
+  if (result.kind === 'multi-store' && !result.architecture?.length) errors.push('Combined architecture lacks roles or failure boundaries');
+  const nodes = result.architecture || [];
+  if (nodes.filter((node) => node.id === 'records').length > 1) errors.push('Multiple authoritative record nodes');
+  for (const node of nodes) {
+    if (!node.id || !node.label || !node.boundary || !['authoritative', 'derived', 'cache', 'retained', 'unresolved'].includes(node.kind) || !Array.isArray(node.serviceIds)) errors.push('Incomplete architecture node');
+    if (node.kind === 'retained' && node.serviceIds.length) errors.push('Retained store is selected by tool');
+  }
+  for (const link of result.architectureLinks || []) {
+    if (!nodes.some((node) => node.id === link.from) || !nodes.some((node) => node.id === link.to) || !link.boundary) errors.push('Invalid architecture link');
+  }
   return errors;
+}
+
+export function evidenceLinkIssues(text, sources) {
+  const registered = new Set(sources.map((source) => source.url.replace(/&amp;/g, '&')));
+  const allowed = /^(https:\/\/(github\.com\/preciousajuru\/|preciousajuru\.github\.io\/azure-compute-navigator\/|creativecommons\.org\/licenses\/by\/4\.0\/|azure\.microsoft\.com\/en-us\/pricing\/calculator\/))/;
+  return [...new Set(text.match(/https:\/\/[^\s)"<>]+/g) || [])].filter((url) => !registered.has(url) && !allowed.test(url)).map((url) => `Unregistered evidence link: ${url}`);
+}
+
+export function isHubSource(source) {
+  return /\/(azure\/cosmos-db|fabric|azure\/storage\/blobs|azure\/search|azure\/data-explorer)\/?$/.test(new URL(source.url).pathname);
 }

@@ -4,12 +4,20 @@ import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { validateLocalLinks } from '../scripts/links.mjs';
-import { verificationIssue, resultIssues } from '../scripts/validation.mjs';
+import { verificationIssue, resultIssues, evidenceLinkIssues, isHubSource } from '../scripts/validation.mjs';
 import { evaluate } from '../src/logic/recommendations.js';
 import { scenarios } from '../src/data/scenarios.js';
 import { serviceById } from '../src/data/services.js';
 import { sourceById } from '../src/data/sources.js';
 import { ruleById } from '../src/data/rules.js';
+
+test('capability hubs and unregistered article evidence are rejected', () => {
+  assert.equal(isHubSource({ url: 'https://learn.microsoft.com/en-us/azure/search/' }), true);
+  assert.equal(isHubSource({ url: 'https://learn.microsoft.com/en-us/azure/search/vector-search-overview' }), false);
+  assert.deepEqual(evidenceLinkIssues('[Evidence](https://learn.microsoft.com/test)', [{ url: 'https://learn.microsoft.com/test' }]), []);
+  assert.equal(evidenceLinkIssues('[Evidence](https://learn.microsoft.com/missing)', []).length, 1);
+  assert.deepEqual(evidenceLinkIssues('[Companion](https://github.com/preciousajuru/azure-compute-navigator)', []), []);
+});
 
 test('link validation resolves project-relative pages, assets and generated anchors', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'navigator-links-'));

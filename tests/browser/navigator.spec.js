@@ -160,8 +160,8 @@ test('search branching reaches authoritative-state model and does not infer role
   await expect(heading(page)).toHaveText('What model does the authoritative application state need?');
   await page.getByRole('radio', { name: 'Keep an existing authoritative store', exact: true }).check();
   await next(page).click();
-  await expect(page.locator('.result-card h3')).toHaveText(['Azure AI Search']);
-  await expect(page.locator('#app')).toContainText('durable state alone does not justify adding SQL Database');
+  await expect(page.locator('.result-card h3')).toHaveCount(0);
+  await expect(page.locator('#app')).toContainText('retained; not selected or migrated by this tool');
 });
 
 test('an engine-free assessment and restart are fully keyboard operable', async ({ page }) => {

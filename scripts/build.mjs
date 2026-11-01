@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Marked } from 'marked';
 import { validateLocalLinks } from './links.mjs';
+import { evidenceLinkIssues } from './validation.mjs';
+import { sources } from '../src/data/sources.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'dist');
@@ -58,6 +60,8 @@ if (preview) {
 }
 await mkdir(path.join(output, 'publication'));
 const article = await readFile(path.join(root, 'docs', 'article.md'), 'utf8');
+const evidenceIssues = evidenceLinkIssues(article, sources);
+if (evidenceIssues.length) throw new Error(evidenceIssues.join('\n'));
 await writeFile(path.join(output, 'publication', 'article.md'), article);
 const { html: articleHtml, title } = renderMarkdown(article);
 const portable = await Promise.all([...articleHtml.matchAll(/src="(\.\.\/screenshots\/[^"]+)"/g)].map(async ([, reference]) => {

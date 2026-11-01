@@ -33,7 +33,7 @@ The site is static and client-only. Assessment answers remain in browser memory.
 
 ## Content and attribution
 
-Original article and documentation content are licensed under CC BY 4.0; source code is MIT. Azure product names and Microsoft documentation are referenced, not republished. The Compute Navigator is linked as design inspiration only; no source code is copied into this repository.
+Original article and documentation content are licensed under CC BY 4.0; source code is MIT. Azure product names and Microsoft documentation are referenced, not republished. The [Compute Navigator repository](https://github.com/preciousajuru/azure-compute-navigator) and [application](https://preciousajuru.github.io/azure-compute-navigator/) are design inspiration only; no source code is copied into this repository.
 
 ## Pull requests
 

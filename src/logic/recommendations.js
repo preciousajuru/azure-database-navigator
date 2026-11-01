@@ -37,6 +37,102 @@ function getUnknowns(answers) {
   return unknowns;
 }
 
+function evaluateRoles(answers) {
+  const wantsSearch = answers.workload === 'search' || answers.dataShape === 'search' || answers.dataKinds?.includes('search') || answers.accessPattern === 'vector-similarity';
+  const wantsCache = answers.workload === 'cache' || answers.dataShape === 'cache' || answers.dataKinds?.includes('cache');
+  const wantsFiles = answers.sourceFiles === 'yes' || answers.dataKinds?.includes('files');
+  const candidates = [];
+  const architecture = [];
+  const architectureLinks = [];
+  const unknowns = getUnknowns(answers);
+  const decisions = [];
+  const exclusions = [];
+  const ruleIds = new Set(['exclude-retired-new', 'authoritative-role']);
+  const sourceIds = new Set(['arch-data-models', 'arch-data-considerations']);
+  const add = (id, reason, caveat) => candidates.push(candidate(id, reason, caveat));
+  const absorb = (result) => {
+    candidates.push(...result.candidates);
+    exclusions.push(...result.exclusions);
+    unknowns.push(...result.unknowns);
+    result.ruleIds.forEach((id) => ruleIds.add(id));
+    result.sourceIds.forEach((id) => sourceIds.add(id));
+  };
+  let record;
+  if (answers.durable === 'yes' && answers.recordModel === 'existing') {
+    record = {
+      id: 'records', role: 'System of record', kind: 'retained',
+      label: 'Your existing authoritative store (retained; not selected or migrated by this tool)',
+      serviceIds: [],
+      boundary: 'Retain its current record ownership. Verify its actual engine, version, recovery, access controls and retrieval capabilities; no migration is inferred.'
+    };
+  } else if (answers.durable === 'yes' && ['relational', 'documents'].includes(answers.recordModel)) {
+    const result = evaluate({
+      ...answers, workload: 'new-app', dataShape: answers.recordModel, dataKinds: [],
+      recordModel: undefined, durable: undefined, sourceFiles: undefined,
+      retrievalType: undefined, existingService: undefined
+    });
+    absorb(result);
+    record = {
+      id: 'records', role: 'System of record', kind: 'authoritative',
+      label: answers.recordModel === 'relational' ? 'Transactional system of record' : 'Document system of record',
+      serviceIds: result.candidates.map((item) => item.serviceId),
+      boundary: result.candidates.length ? 'Choose ONE of these platform alternatives, using the same engine and compatibility rules as a single-store assessment. Own authoritative writes, access controls and recovery.' : 'Document-store selection remains unresolved: define aggregate/query/transaction boundaries before choosing ONE authoritative store.'
+    };
+  } else if (answers.durable !== 'no') {
+    unknowns.push('The authoritative record model is unresolved; no new record database is selected.');
+    architecture.push({ id: 'record-gap', role: 'Unresolved requirement', kind: 'unresolved', label: 'Authoritative record requirements unresolved', serviceIds: [], boundary: 'Confirm whether authoritative records are needed and their model or retained engine before selecting a store.' });
+  }
+  if (record) architecture.push(record);
+  if (wantsFiles) {
+    add('blob-storage', 'Original files are explicitly required; retain them independently of derived indexes.', 'Define retention, access controls and recoverable backups.');
+    architecture.push({ id: 'files', role: 'Authoritative source files', kind: 'authoritative', label: 'Original files', serviceIds: ['blob-storage'], boundary: 'Owns original files, not application records. Index/cache failure must not delete these originals.' });
+  }
+  if (wantsSearch) {
+    ruleIds.add('vector-existing-first');
+    sourceIds.add('vector-selection');
+    const retrievalKnown = ['keyword', 'vector', 'hybrid'].includes(answers.retrievalType);
+    const existing = serviceById[answers.existingService];
+    const localOptions = existing ? [existing] : (record?.serviceIds || []).map((id) => serviceById[id]);
+    const vectorOptions = localOptions.filter((service) => ['supported', 'conditional'].includes(service.capabilities.vectorSearch?.status));
+    if (!retrievalKnown) {
+      unknowns.push('Retrieval type is unknown; no vector database or separate search index is added.');
+    } else {
+      if (answers.retrievalType !== 'keyword' && vectorOptions.length) {
+        decisions.push({ id: 'vector-existing-first', outcome: `First test vector retrieval in ${vectorOptions.map((service) => service.name).join(' or ')}. These are alternatives, not extra required stores. Check dimensions, index type/status, filtering, freshness and measured latency.` });
+        vectorOptions.forEach((service) => service.capabilities.vectorSearch.sourceIds.forEach((id) => sourceIds.add(id)));
+      } else if (answers.retrievalType !== 'keyword') {
+        unknowns.push('The existing or planned store’s vector capability has not been established; identify its exact service/version and test retrieval before adding a store.');
+      }
+      if (answers.separateIndex === 'yes' && answers.searchFreshness === 'lag-ok') {
+        ruleIds.add('search-separated-role');
+        add('ai-search', 'A separate managed index across source content is explicitly required and indexing lag is acceptable.', 'Validate hybrid/semantic ranking, filters, index quotas, source integration and region/tier availability.');
+        architecture.push({ id: 'search', role: 'Derived search / retrieval index', kind: 'derived', label: 'Managed search index', serviceIds: ['ai-search'], boundary: 'Derived content; define ingestion, lag, retries, deletion propagation and rebuilds. No atomic cross-store writes are assumed.' });
+        for (const source of architecture.filter((node) => ['files', 'records'].includes(node.id))) {
+          architectureLinks.push({ from: source.id, to: 'search', purpose: 'Derived from — indexing design required', boundary: 'Select and verify a propagation mechanism. Allow lag, retry failures, reconcile deletions and rebuild independently from originals.' });
+        }
+      } else {
+        decisions.push({ id: 'vector-existing-first', outcome: 'No separate index is selected. First assess source-store retrieval; a separate managed index needs justified features, multiple-source integration and acceptable freshness boundaries.' });
+        if (answers.searchFreshness === 'real-time') unknowns.push('Near-real-time retrieval favours testing the source database first; a copied index is not assumed to make every write immediately searchable.');
+      }
+    }
+  }
+  if (wantsCache) {
+    ruleIds.add('cache-not-record');
+    add('managed-redis', 'A regenerable cache role is explicit; it does not select or replace the authoritative engine.', 'Define expiry, invalidation, memory, cache misses and failure behaviour.');
+    architecture.push({ id: 'cache', role: 'Cache — regenerable copy', kind: 'cache', label: 'Application cache', serviceIds: ['managed-redis'], boundary: 'Not the source of truth. Specify expiry, invalidation, bypass/degradation and reload behaviour.' });
+    if (record) architectureLinks.push({ from: 'records', to: 'cache', purpose: 'Invalidate / refresh — design required', boundary: 'Define expiry, cache-miss reloads and invalidation. Test outage independently of authoritative writes; no atomic cross-store update is implied.' });
+  }
+  candidates.forEach((item) => serviceById[item.serviceId].sourceIds.forEach((id) => sourceIds.add(id)));
+  return {
+    kind: architecture.some((node) => ['derived', 'cache'].includes(node.kind)) && architecture.some((node) => ['authoritative', 'retained'].includes(node.kind)) ? 'multi-store' : candidates.length ? 'shortlist' : 'insufficient-information',
+    title: 'Assess roles without adding unnecessary stores',
+    candidates: uniqueCandidates(candidates), architecture, architectureLinks, decisions, exclusions,
+    unknowns: [...new Set(unknowns)],
+    changes: ['First test whether the authoritative store can meet retrieval requirements. Separate stores only for documented roles.', 'Select one authoritative platform alternative; independent stores are not automatically transactionally consistent.'],
+    sourceIds: [...sourceIds], ruleIds: [...ruleIds]
+  };
+}
+
 export function evaluate(input = {}) {
   const answers = { ...input, persistence: ['external', 'processing'].includes(input.persistence) ? 'no' : input.persistence, constraints: [...new Set([...(input.constraints || []), ...(input.relationships === 'joins' || input.consistency === 'business-atomic' ? ['relationships'] : [])])] };
   const candidateList = [];
@@ -95,6 +191,10 @@ export function evaluate(input = {}) {
     };
   }
 
+  if (['cache', 'search'].includes(answers.workload) || ['cache', 'search'].includes(answers.dataShape) || answers.dataKinds?.length || answers.workload === 'mixed' && answers.durable || answers.accessPattern === 'vector-similarity') {
+    return evaluateRoles(answers);
+  }
+
   if (answers.workload === 'files' || (answers.dataShape === 'files' && answers.workload !== 'mixed')) {
     recordRule('files-no-db');
     candidateList.push(candidate('blob-storage', 'The stated need is file/object storage, which is a storage model distinct from a database.', 'If application records, metadata queries or transactions are also needed, assess those as a separate role.'));
@@ -133,7 +233,7 @@ export function evaluate(input = {}) {
     } else if (answers.engine === 'cassandra') {
       recordRule('cassandra-feature-validation');
       candidateList.push(candidate('cosmos-other-apis', 'Cosmos DB exposes a Cassandra API that may be assessed against the existing workload.', 'Validate CQL features, protocol compatibility, migration and availability for the selected API.'));
-      candidateList.push(candidate('cosmos-cassandra', 'Azure Managed Instance for Apache Cassandra is an official managed native Cassandra option to assess when its version, topology and migration model fit.', 'The current overview documents Cassandra through version 5.0; verify target version, region and migration path.'));
+      candidateList.push(candidate('managed-cassandra', 'Azure Managed Instance for Apache Cassandra is an official managed native Cassandra option to assess when its version, topology and migration model fit.', 'The current overview documents Cassandra through version 5.0; verify target version, region and migration path.'));
     }
 
     if (answers.dataShape === 'relational' || constraints.has('relationships')) {
@@ -152,32 +252,16 @@ export function evaluate(input = {}) {
       candidateList.push(candidate('cosmos-nosql', 'A document-oriented model makes Cosmos DB for NoSQL a candidate to compare with relational choices.', 'JSON alone is not a decision rule. Check join, transaction, consistency and access-pattern requirements.'));
     }
 
+    if (answers.dataShape === 'graph' || answers.relationships === 'graph' || answers.accessPattern === 'graph-traversal') {
+      recordRule('graph-traversal');
+      candidateList.push(candidate('cosmos-other-apis', 'Assess the Apache Gremlin API for property-graph traversal, not the Cassandra or Table API in this grouped profile.', 'Verify traversal depth, graph size, partitioning, latency and TinkerPop support. The overview directs high-scale review to NoSQL and OLAP/Gremlin migrations to Graph in Fabric; do not infer parity or lifecycle guarantees.'));
+      unknowns.push('Traversal depth, graph size, partition boundaries and latency targets are unverified. Relational modelling can remain appropriate for limited-depth relationships; graph analytics in Fabric is not automatically an OLTP replacement.');
+    }
+
     if (answers.workload === 'telemetry' || answers.dataShape === 'telemetry' || answers.accessPattern === 'time-window-scan') {
       recordRule('analytics-time-series');
       candidateList.push(candidate('data-explorer', 'High-volume timestamped events and time-window analysis are a fit to evaluate against the analytical time-series model.', 'Validate ingestion, query, retention, availability, region and operational requirements.'));
       candidateList.push(candidate('fabric-eventhouse', 'Fabric Eventhouse is an additional analytics-oriented option to assess for event workloads.', 'Confirm capacity, region, availability and current product capabilities.'));
-    }
-
-    if (answers.workload === 'search' || answers.dataShape === 'search' || answers.dataKinds?.includes('search')) {
-      recordRule('search-separated-role');
-      if (answers.sourceFiles === 'yes') candidateList.push(candidate('blob-storage', 'The workload explicitly owns source files, so object storage can retain those originals separately from the derived index.', 'Define source-file retention, updates and index rebuilds.'));
-      else if (answers.sourceFiles !== 'no') unknowns.push('Whether retrieval needs new source-file storage is unknown; do not add Blob Storage until that role is confirmed.');
-      candidateList.push(candidate('ai-search', 'Search or retrieval requirements make a search index a candidate derived role.', 'A search index does not replace a transactional source of truth; decide whether vector search is actually needed.'));
-      if (answers.durable === 'yes' && answers.recordModel === 'relational' && !candidateList.some((item) => serviceById[item.serviceId].role === 'System of record')) {
-        candidateList.push(candidate('azure-sql-db', 'If the application needs durable transactional state, evaluate a relational system of record separately from retrieval.', 'The transaction model and current engine contract determine whether SQL Database is appropriate.'));
-      }
-      if (!answers.durable || answers.durable === 'unknown') unknowns.push('Whether search needs new authoritative application state is unresolved; keep the existing source or assess that role separately.');
-      if (answers.durable === 'yes' && !candidateList.some((item) => serviceById[item.serviceId].role === 'System of record')) unknowns.push('The authoritative state model or existing-store contract needs separate assessment; durable state alone does not justify adding SQL Database.');
-    }
-
-    if (answers.workload === 'cache' || answers.dataShape === 'cache' || answers.dataKinds?.includes('cache')) {
-      recordRule('cache-not-record');
-      candidateList.push(candidate('managed-redis', 'The stated cache or transient-state role can be assessed with Azure Managed Redis.', 'The cache does not silently replace durable application data; define source of truth, expiry, invalidation and failure behaviour.'));
-      if (answers.durable === 'yes' && answers.recordModel === 'relational' && !candidateList.some((item) => serviceById[item.serviceId].role === 'System of record')) {
-        candidateList.push(candidate('azure-sql-db', 'If authoritative transactional data is also required, assess that as a separate role.', 'Select the system of record from its own data and compatibility requirements.'));
-      }
-      if (!answers.durable || answers.durable === 'unknown') unknowns.push('The durable source of truth for this cache is unknown; no new record database is assumed.');
-      if (answers.durable === 'yes' && !candidateList.some((item) => serviceById[item.serviceId].role === 'System of record')) unknowns.push('Preserve or separately assess the authoritative state model; a durable-state requirement alone does not select a relational database.');
     }
 
     if (constraints.has('tenant-isolation') && (answers.dataShape === 'relational' || answers.dataShape === 'unknown')) {
@@ -235,53 +319,6 @@ export function evaluate(input = {}) {
     };
   }
 
-  if (candidates.some((item) => item.serviceId === 'ai-search')) {
-    const multiStore = candidates.length > 1;
-    return {
-      kind: multiStore ? 'multi-store' : 'shortlist',
-      title: multiStore ? 'Separate the source, state and retrieval roles' : 'A search index is a candidate',
-      candidates,
-      architecture: [
-        { role: 'Authoritative source files', serviceId: 'blob-storage', boundary: 'Original documents; define updates, access controls, retention and recoverable backups.' },
-        ...candidates.filter((item) => serviceById[item.serviceId].role === 'System of record').map((item) => ({ role: 'System of record', serviceId: item.serviceId, boundary: 'Authoritative application records; own transaction, security and recovery guarantees separately from the index.' })),
-        { role: 'Search / retrieval index', serviceId: 'ai-search', boundary: 'Derived index; account for indexing lag, reindexing and failure recovery.' },
-        { role: 'Cache', serviceId: 'managed-redis', boundary: 'Regenerable data; define expiry, invalidation, reloads and outage behaviour.' }
-      ].filter((role) => candidates.some((item) => item.serviceId === role.serviceId)),
-      architectureLinks: [
-        ...(answers.sourceFiles === 'yes' ? [{ from: 'blob-storage', to: 'ai-search', purpose: 'Source updates → index ingestion', boundary: 'Indexing is asynchronous: allow lag, retry failed updates and rebuild from the original files. Index failure must not delete authoritative files.' }] : []),
-        ...candidates.filter((item) => serviceById[item.serviceId].role === 'System of record').map((item) => ({ from: item.serviceId, to: 'ai-search', purpose: 'Application references → retrieval', boundary: 'Join results in the application; no cross-store atomic commit is assumed. Define stale-reference handling and independent restore/rebuild procedures.' })),
-        ...candidates.filter((item) => serviceById[item.serviceId].role === 'System of record' && candidates.some((entry) => entry.serviceId === 'managed-redis')).map((item) => ({ from: item.serviceId, to: 'managed-redis', purpose: 'Source reads → regenerable cache', boundary: 'Define invalidation and expiry. Handle cache outage independently of authoritative writes; no cross-store atomic commit is assumed.' }))
-      ],
-      exclusions,
-      decisions,
-      unknowns: [...new Set(unknowns)],
-      changes: ['If there is no need for vector retrieval, a conventional search design may be more appropriate.', 'If no durable application state is needed, do not add a transactional database by default.'],
-      sourceIds: [...new Set(candidates.flatMap((item) => serviceById[item.serviceId].sourceIds))],
-      ruleIds: [...appliedRuleIds]
-    };
-  }
-
-  if (candidates.some((item) => item.serviceId === 'managed-redis')) {
-    const record = candidates.find((item) => serviceById[item.serviceId].role === 'System of record');
-    const multiStore = answers.durable !== 'no' && Boolean(record);
-    return {
-      kind: multiStore ? 'multi-store' : 'shortlist',
-      title: multiStore ? 'Keep the cache separate from the source of truth' : 'A cache is a candidate, not a database replacement',
-      candidates,
-      architecture: multiStore ? [
-        { role: 'System of record', serviceId: record.serviceId, boundary: 'Owns authoritative, recoverable data.' },
-        { role: 'Cache', serviceId: 'managed-redis', boundary: 'Derived or transient data; define expiry, invalidation and outage behaviour.' }
-      ] : [],
-      architectureLinks: record ? [{ from: record.serviceId, to: 'managed-redis', purpose: 'Source reads → regenerable cache', boundary: 'Define expiry, invalidation and cache-miss reloads. On cache outage, use a tested bypass or graceful degradation; no atomic cross-store update is implied.' }] : [],
-      exclusions,
-      decisions,
-      unknowns: [...new Set(unknowns)],
-      changes: ['If cache contents cannot be regenerated, reassess whether this is truly cache data and define durability requirements.'],
-      sourceIds: [...new Set(candidates.flatMap((item) => serviceById[item.serviceId].sourceIds))],
-      ruleIds: [...appliedRuleIds]
-    };
-  }
-
   if (!candidates.length) {
     return {
       kind: 'no-verified-match',
@@ -290,7 +327,7 @@ export function evaluate(input = {}) {
       exclusions,
       decisions,
       unknowns: [...new Set(unknowns)],
-      changes: ['Confirm the workload model and check current Azure documentation for a suitable service.'],
+      changes: [`This catalogue does not establish a match for the reported model (${answers.dataShape}), access pattern (${answers.accessPattern || 'unknown'}) and engine contract (${answers.engine || 'unconfirmed'}). Clarify these requirements and consult current service documentation.`],
       sourceIds: [],
       ruleIds: [...appliedRuleIds]
     };

@@ -93,12 +93,12 @@ export const sources = [
   },
   {
     id: 'cosmos-overview',
-    title: 'Azure Cosmos DB documentation and APIs',
+    title: 'Azure Cosmos DB for NoSQL overview',
     publisher: 'Microsoft Learn',
-    url: 'https://learn.microsoft.com/en-us/azure/cosmos-db/',
+    url: 'https://learn.microsoft.com/en-us/azure/cosmos-db/overview',
     published: '2026-06-18',
     verifiedOn: REVIEWED_ON,
-    evidence: 'Lists distinct APIs for NoSQL, MongoDB, Cassandra, Gremlin, Table and PostgreSQL, as well as vector-oriented documentation.',
+    evidence: 'Describes the managed NoSQL service, document storage, SDKs and configurable global distribution. API-specific compatibility is documented separately.',
     limitation: 'API names do not prove complete compatibility with another product or API. Check the exact API feature matrix.'
   },
   {
@@ -203,42 +203,42 @@ export const sources = [
   },
   {
     id: 'blob-overview',
-    title: 'Azure Blob Storage documentation',
+    title: 'Introduction to Blob Storage',
     publisher: 'Microsoft Learn',
-    url: 'https://learn.microsoft.com/en-us/azure/storage/blobs/',
+    url: 'https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction',
     published: 'Continuously maintained',
     verifiedOn: REVIEWED_ON,
-    evidence: 'Service reference for object storage and blob capabilities.',
+    evidence: 'Defines object storage for unstructured text/binary data, file delivery, archives and analytics inputs; distinguishes block, append and page blobs.',
     limitation: 'Confirm access tier, namespace, region, security and lifecycle requirements for the actual solution.'
   },
   {
     id: 'ai-search-overview',
-    title: 'Azure AI Search documentation',
+    title: 'Introduction to Azure AI Search',
     publisher: 'Microsoft Learn',
-    url: 'https://learn.microsoft.com/en-us/azure/search/',
+    url: 'https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search',
     published: 'Continuously maintained',
     verifiedOn: REVIEWED_ON,
-    evidence: 'Service reference for search and indexing capabilities, including vector-search documentation.',
+    evidence: 'Defines a managed search service; classic search loads source content into an index and supports full-text, vector and hybrid queries. Separates classic and agentic retrieval.',
     limitation: 'A search index is not automatically a transactional system of record; check supported features and tier/region limits.'
   },
   {
     id: 'data-explorer-overview',
-    title: 'Azure Data Explorer documentation',
+    title: 'What is Azure Data Explorer?',
     publisher: 'Microsoft Learn',
-    url: 'https://learn.microsoft.com/en-us/azure/data-explorer/',
+    url: 'https://learn.microsoft.com/en-us/azure/data-explorer/data-explorer-overview',
     published: 'Continuously maintained',
     verifiedOn: REVIEWED_ON,
-    evidence: 'Service reference for Azure Data Explorer and its analytics-oriented workload.',
+    evidence: 'Defines a managed analytics platform for logs, telemetry and interactive time-series analysis, using typed tables, KQL and ingestion-time indexing.',
     limitation: 'Validate ingestion, query, retention, region and integration requirements for the workload.'
   },
   {
     id: 'fabric-overview',
-    title: 'Microsoft Fabric documentation',
+    title: 'OneLake overview',
     publisher: 'Microsoft Learn',
-    url: 'https://learn.microsoft.com/en-us/fabric/',
+    url: 'https://learn.microsoft.com/en-us/fabric/onelake/onelake-overview',
     published: 'Continuously maintained',
     verifiedOn: REVIEWED_ON,
-    evidence: 'Service documentation for Fabric data workloads, including Warehouse, Lakehouse, Eventhouse and OneLake concepts.',
+    evidence: 'Defines OneLake as the Fabric tenant-wide analytics data lake built on ADLS, with workspace/data-item governance. Does not establish capabilities of every Fabric workload.',
     limitation: 'Fabric workload capabilities, licensing, capacity, region and deployment constraints require current product-specific verification.'
   },
   {
@@ -250,7 +250,33 @@ export const sources = [
     verifiedOn: REVIEWED_ON,
     evidence: 'Lists Azure Database for MariaDB with an end date of 19 September 2025 and links to migration guidance.',
     limitation: 'This retirement concerns the Azure-hosted service, not the MariaDB database engine as a whole; check the current notice and migration guidance.'
-  }
+  },
+  ...[
+    ['vector-selection', 'Choose an Azure service for vector search', 'https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/vector-search', '2026-09-17', 'Recommends checking existing databases before adding a vector store; separate managed indexes suit multiple sources without real-time freshness requirements. Compares index types and service-specific limits.', 'A comparison snapshot is not a sizing or latency guarantee; service-specific pages take precedence.'],
+    ['sql-vector', 'SQL vector data type', 'https://learn.microsoft.com/en-us/sql/t-sql/data-types/vector-data-type?view=azuresqldb-current', '2026-10-13', 'Documents float32 vectors up to 1,998 dimensions and float16 up to 3,996; half precision is GA in Azure SQL Database. Managed Instance availability depends on update policy.', 'Data type support does not establish ANN index availability; the vector selection guide marks SQL DiskANN indexing preview.'],
+    ['postgres-vector', 'Use pgvector in Flexible Server', 'https://learn.microsoft.com/en-us/azure/postgresql/extensions/how-to-use-pgvector', '2026-07-10', 'The vector extension enables similarity search; allow-list vector and create it in each database.', 'Verify installed extension/version and index limits; the selection guide lists HNSW/IVFFlat indexing up to 2,000 dimensions.'],
+    ['cosmos-vector', 'Cosmos DB integrated vector store', 'https://learn.microsoft.com/en-us/azure/cosmos-db/vector-search', '2025-09-25; updated 2026-09-29', 'Documents account enablement, container vector policy, flat (505 dimensions), quantizedFlat and DiskANN (4,096); fewer than 1,000 vectors use a full scan for the latter indexes.', 'Check container restrictions, partitioning, current region/configuration and preview features separately.'],
+    ['documentdb-vector', 'DocumentDB integrated vector store', 'https://learn.microsoft.com/en-us/azure/documentdb/vector-search', '2025-11-05', 'Stores embeddings with documents and documents IVF, HNSW and DiskANN indexing.', 'Index type, compression, dimensions, tier and version need validation; no performance promise.'],
+    ['redis-vector', 'Managed Redis vector similarity', 'https://learn.microsoft.com/en-us/azure/redis/overview-vector-similarity', '2026-06-22', 'RediSearch supports FLAT/HNSW; provision the module at creation with Enterprise clustering and NoEviction. Memory/Balanced/Compute tiers support it, Flash Optimized does not.', 'Existing instances cannot add modules afterwards; verify region, memory/index overhead and client configuration.'],
+    ['search-vector', 'AI Search vector overview', 'https://learn.microsoft.com/en-us/azure/search/vector-search-overview', '2026-08-05', 'Supports vector and hybrid queries; vector search is available on all regions/tiers but old service instances and vector quotas require checks; embedding generation can cost separately.', 'This does not establish all semantic ranking or agentic features are available in all regions.'],
+    ['gremlin-overview', 'Cosmos DB for Apache Gremlin overview', 'https://learn.microsoft.com/en-us/azure/cosmos-db/gremlin/overview', '2025-07-22', 'Documents property graphs and Gremlin traversal; points high-scale evaluation to NoSQL and OLAP/Gremlin migrations to Graph in Fabric.', 'TinkerPop compatibility is not parity; read support limits and current lifecycle guidance before selecting.'],
+    ['fabric-graph', 'Graph in Microsoft Fabric overview', 'https://learn.microsoft.com/en-us/fabric/graph/overview', '2026-05-20', 'Documents OneLake-based graph analytics using GQL, capacity-based operation and a named region availability list; graph-powered Data Agent reasoning is preview.', 'Graph analytics is not automatically an OLTP graph replacement; target region and feature status need verification.'],
+    ['cosmos-cassandra-api', 'Cosmos DB Cassandra API overview', 'https://learn.microsoft.com/en-us/azure/cosmos-db/cassandra/overview', '2025-07-22', 'Documents wide-column model and Cassandra/CQL API; recommends native managed Cassandra for Cassandra migration assessment.', 'API behaviour can differ from native Cassandra.'],
+    ['cosmos-mongo-overview', 'Cosmos DB MongoDB API overview', 'https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/overview', '2025-07-22', 'Documents document model and MongoDB wire protocol; states Microsoft does not run MongoDB databases for this API.', 'Use the specific version compatibility matrix, not protocol support, for migration claims.'],
+    ['sql-mi-overview', 'Managed Instance overview', 'https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/sql-managed-instance-paas-overview', '2026-02-19', 'Documents managed SQL/OS patching, native VNet, SQL Agent, linked servers and cross-database features, backups and update-policy differences.', 'Near-complete compatibility is not universal parity; configuration, feature differences and region need checking.'],
+    ['fabric-sql', 'SQL database in Fabric overview', 'https://learn.microsoft.com/en-us/fabric/database/sql/overview', '2026-10-02', 'Defines an OLTP database using the Azure SQL Database engine and near-real-time replication to OneLake.', 'Fabric configuration and feature surface are not identical to Azure SQL Database.'],
+    ['fabric-warehouse', 'Fabric Warehouse overview', 'https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing', '2025-09-09', 'Defines a T-SQL analytical warehouse over Delta tables with multi-table ACID transactions for curated marts and BI.', 'Analytics transactions do not establish suitability for application OLTP.'],
+    ['fabric-lakehouse', 'Fabric Lakehouse overview', 'https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview', '2026-05-07', 'Defines Spark/SQL analytics on files and Delta tables; distinguishes lakehouse from warehouse and their multi-table transaction behaviour.', 'Workload, governance, capacity and region need assessment.'],
+    ['fabric-eventhouse', 'Fabric Eventhouse overview', 'https://learn.microsoft.com/en-us/fabric/real-time-intelligence/eventhouse', '2026-06-15', 'Defines a container of databases for streaming time-based events, KQL analysis and shared capacity/monitoring.', 'No ingestion or query performance guarantee for a particular workload.'],
+    ['table-overview', 'Azure Table Storage overview', 'https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-overview', '2021-05-27', 'Defines key/attribute schemaless entity storage, partition/row keys, authenticated access and contrasts Cosmos DB Table API.', 'Do not generalise Cosmos Table indexing or distribution capabilities to Table Storage.'],
+    ['adls-overview', 'Azure Data Lake Storage overview', 'https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction', '2026-07-02', 'Defines analytical capabilities on Blob Storage enabled by hierarchical namespace, file-system semantics and ABFS access.', 'It is a capability set on Blob Storage, not an independent transactional engine.'],
+    ['sql-json', 'JSON in SQL Database Engine', 'https://learn.microsoft.com/en-us/sql/relational-databases/json/json-data-sql-server?view=azuresqldb-current', '2026-10-14', 'Documents JSON functions alongside relational columns; JSON support requires compatibility level 130 or higher.', 'Validate exact version, native JSON/index availability and query behaviour separately.'],
+    ['postgres-json', 'PostgreSQL JSON types', 'https://www.postgresql.org/docs/current/datatype-json.html', 'Current engine documentation', 'Documents json, jsonb and jsonpath; jsonb supports indexing and has semantics different from textual json.', 'Engine documentation does not establish the target Azure server version or configuration.'],
+    ['partition-design', 'Data partitioning recommendations', 'https://learn.microsoft.com/en-us/azure/well-architected/design-guides/partition-data', '2023-11-15; updated 2026-10-09', 'Explains access-pattern-driven partitioning, hot partitions, contention and cross-partition complexity.', 'General engineering guidance; not proof of service-specific performance.']
+  ].map(([id, title, url, published, evidence, limitation]) => ({
+    id, title, url, published, evidence, limitation, verifiedOn: REVIEWED_ON,
+    publisher: id === 'postgres-json' ? 'PostgreSQL Global Development Group' : 'Microsoft Learn'
+  }))
 ];
 
 export const sourceById = Object.fromEntries(sources.map((source) => [source.id, source]));

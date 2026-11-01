@@ -4,4 +4,4 @@ Original prose in `docs/`, the companion article source in `docs/article.md`, it
 
 Suggested attribution: “Azure Database Navigator documentation and article by Precious Ajuru, licensed under CC BY 4.0.”
 
-The MIT licence in the repository root applies to source code. Microsoft product names, Microsoft Learn material, Azure logos and third-party material remain subject to their own owners' terms. This repository does not reproduce the Azure Compute Navigator source code; it takes UX inspiration and links to the separate project.
+The MIT licence in the repository root applies to source code. Microsoft product names, Microsoft Learn material, Azure logos and third-party material remain subject to their own owners' terms. This repository does not reproduce the [Azure Compute Navigator source code](https://github.com/preciousajuru/azure-compute-navigator); it takes UX inspiration from the [separate application](https://preciousajuru.github.io/azure-compute-navigator/).

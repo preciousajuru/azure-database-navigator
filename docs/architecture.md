@@ -1,5 +1,7 @@
 # Architecture and build
 
+Architecture data describes roles independently from candidates. A transactional record node can carry SQL Database OR PostgreSQL (or a narrower engine-constrained list), but represents ONE store. Retained stores are visible with no selected platform or inferred migration. Document roles reuse document assessment rules; unknown roles are unresolved. Links use role IDs and carry design/failure notes, not a fabricated synchronisation implementation. and build
+
 Azure Database Navigator is a client-only static application. It does not call Azure, an AI model, a backend, telemetry, a database or a runtime third-party service. Assessment state is in page memory and is never added to URLs. Only the theme preference is stored in local storage.
 
 ## Independent modules

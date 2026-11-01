@@ -84,25 +84,25 @@ test('MongoDB options remain distinct with feature-level validation caveats', ()
 
 test('Cassandra engine and Cassandra API remain separate options with a version gate', () => {
   const result = evaluate({ workload: 'migration', dataShape: 'mixed', engine: 'cassandra', geography: 'single-region', recovery: 'important' });
-  assert.deepEqual(ids(result), ['cosmos-other-apis', 'cosmos-cassandra']);
-  assert.equal(serviceById['cosmos-cassandra'].capabilities.cassandraCompatibility.status, 'conditional');
-  assert.ok(serviceById['cosmos-cassandra'].sourceIds.includes('cassandra-managed-overview'));
-  assert.match(result.candidates.find((item) => item.serviceId === 'cosmos-cassandra').caveat, /version 5\.0/);
+  assert.deepEqual(ids(result), ['cosmos-other-apis', 'managed-cassandra']);
+  assert.equal(serviceById['managed-cassandra'].capabilities.cassandraCompatibility.status, 'conditional');
+  assert.ok(serviceById['managed-cassandra'].sourceIds.includes('cassandra-managed-overview'));
+  assert.match(result.candidates.find((item) => item.serviceId === 'managed-cassandra').caveat, /version 5\.0/);
 });
 
 test('RAG separates object source, search index and optional durable application state', () => {
-  const result = evaluate({ workload: 'search', dataShape: 'search', accessPattern: 'full-text', sourceFiles: 'yes', durable: 'yes', recordModel: 'relational', geography: 'single-region', recovery: 'important' });
+  const result = evaluate({ workload: 'search', dataShape: 'search', accessPattern: 'relational-queries', retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok', sourceFiles: 'yes', durable: 'yes', recordModel: 'relational', geography: 'single-region', recovery: 'important' });
   assert.equal(result.kind, 'multi-store');
-  assert.deepEqual(ids(result), ['blob-storage', 'ai-search', 'azure-sql-db']);
-  assert.ok(result.architecture.some((item) => item.serviceId === 'ai-search' && /indexing lag/.test(item.boundary)));
-  assert.ok(result.architecture.some((item) => item.serviceId === 'blob-storage'));
+  assert.deepEqual(ids(result), ['azure-sql-db', 'postgres-flex', 'blob-storage', 'ai-search']);
+  assert.ok(result.architecture.some((item) => item.serviceIds.includes('ai-search') && /lag/.test(item.boundary)));
+  assert.ok(result.architecture.some((item) => item.serviceIds.includes('blob-storage')));
 });
 
 test('cache is never represented as the durable record store', () => {
   const result = evaluate({ workload: 'cache', dataShape: 'cache', durable: 'yes', recordModel: 'relational', geography: 'single-region', recovery: 'basic' });
   assert.equal(result.kind, 'multi-store');
-  assert.deepEqual(ids(result), ['managed-redis', 'azure-sql-db']);
-  assert.equal(result.architecture.find((item) => item.serviceId === 'managed-redis').role, 'Cache');
+  assert.deepEqual(ids(result), ['azure-sql-db', 'postgres-flex', 'managed-redis']);
+  assert.equal(result.architecture.find((item) => item.serviceIds.includes('managed-redis')).kind, 'cache');
 });
 
 test('files-only is a no-database-needed outcome', () => {
@@ -174,18 +174,18 @@ test('unknown cache and search source roles do not add new authoritative stores'
   const cache = evaluate({ workload: 'cache', persistence: 'transient', dataShape: 'cache', durable: 'unknown' });
   assert.deepEqual(ids(cache), ['managed-redis']);
   assert.notEqual(cache.kind, 'multi-store');
-  assert.ok(cache.unknowns.some((question) => /source of truth/.test(question)));
+  assert.ok(cache.unknowns.some((question) => /record model is unresolved/.test(question)));
   const search = evaluate({ workload: 'search', persistence: 'durable', dataShape: 'search', durable: 'unknown', sourceFiles: 'unknown' });
-  assert.deepEqual(ids(search), ['ai-search']);
+  assert.deepEqual(ids(search), []);
   assert.notEqual(search.kind, 'multi-store');
 });
 
 test('confirmed search and cache roles reuse an existing PostgreSQL candidate', () => {
   for (const role of ['search', 'cache']) {
-    const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: role, engine: 'postgres', durable: 'yes', sourceFiles: 'no' });
+    const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: role, engine: 'postgres', recordModel: 'relational', durable: 'yes', sourceFiles: 'no', retrievalType: 'keyword', separateIndex: 'yes', searchFreshness: 'lag-ok' });
     assert.ok(ids(result).includes('postgres-flex'));
     assert.ok(!ids(result).includes('azure-sql-db'));
-    assert.ok(result.architecture.some((node) => node.role === 'System of record' && node.serviceId === 'postgres-flex'));
+    assert.ok(result.architecture.some((node) => node.role === 'System of record' && node.serviceIds.includes('postgres-flex')));
   }
 });
 
@@ -206,13 +206,54 @@ test('durable application state alone does not select SQL or replace an existing
   for (const recordModel of ['unknown', 'documents', 'existing']) {
     const result = evaluate({ workload: 'cache', persistence: 'durable', dataShape: 'cache', durable: 'yes', recordModel });
     assert.deepEqual(ids(result), ['managed-redis']);
-    assert.ok(result.unknowns.some((question) => /authoritative state model/.test(question)));
+    if (recordModel === 'unknown') assert.ok(result.unknowns.some((question) => /record model is unresolved/.test(question)));
+    if (recordModel === 'existing') assert.equal(result.architecture.find((node) => node.id === 'records').kind, 'retained');
   }
 });
 
 test('explicit mixed search and cache roles retain all responsibility boundaries', () => {
-  const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: 'mixed', dataKinds: ['search', 'cache', 'records'], engine: 'postgres', durable: 'yes', sourceFiles: 'no' });
+  const result = evaluate({ workload: 'mixed', persistence: 'durable', dataShape: 'mixed', dataKinds: ['search', 'cache', 'records'], engine: 'postgres', recordModel: 'relational', durable: 'yes', sourceFiles: 'no', retrievalType: 'keyword', separateIndex: 'yes', searchFreshness: 'lag-ok' });
   assert.equal(result.kind, 'multi-store');
   assert.deepEqual(ids(result), ['postgres-flex', 'ai-search', 'managed-redis']);
-  assert.deepEqual(result.architecture.map((node) => node.serviceId), ['postgres-flex', 'ai-search', 'managed-redis']);
+  assert.deepEqual(result.architecture.map((node) => node.serviceIds), [['postgres-flex'], ['ai-search'], ['managed-redis']]);
+});
+
+test('record-role matrix preserves exactly one authoritative record node', () => {
+  for (const recordModel of ['relational', 'documents', 'existing', 'unknown']) {
+    for (const files of [false, true]) for (const search of [false, true]) for (const cache of [false, true]) {
+      const result = evaluate({ workload: 'mixed', dataShape: 'mixed', persistence: 'durable', durable: 'yes', recordModel, dataKinds: ['records', ...(files ? ['files'] : []), ...(search ? ['search'] : []), ...(cache ? ['cache'] : [])], accessPattern: 'document-aggregate', retrievalType: 'keyword', separateIndex: 'yes', searchFreshness: 'lag-ok' });
+      const records = result.architecture.filter((node) => node.id === 'records');
+      assert.equal(records.length, recordModel === 'unknown' ? 0 : 1);
+      if (recordModel === 'relational') assert.deepEqual(records[0].serviceIds, ['azure-sql-db', 'postgres-flex']);
+      if (recordModel === 'documents') assert.deepEqual(records[0].serviceIds, ids(evaluate({ workload: 'new-app', dataShape: 'documents', accessPattern: 'document-aggregate' })));
+      if (recordModel === 'existing') assert.deepEqual(records[0].serviceIds, []);
+      assert.ok(result.architecture.every((node) => node.kind && node.role && node.label && Array.isArray(node.serviceIds) && node.boundary));
+      assert.ok(result.architectureLinks.every((link) => result.architecture.some((node) => node.id === link.from) && result.architecture.some((node) => node.id === link.to)));
+    }
+  }
+  const constrained = evaluate({ workload: 'cache', dataShape: 'cache', durable: 'yes', recordModel: 'relational', engine: 'postgres' });
+  assert.deepEqual(constrained.architecture.find((node) => node.id === 'records').serviceIds, ['postgres-flex']);
+});
+
+test('vector retrieval checks existing stores before adding an index', () => {
+  for (const existingService of ['azure-sql-db', 'postgres-flex', 'cosmos-nosql', 'azure-documentdb', 'managed-redis']) {
+    const result = evaluate({ workload: 'search', dataShape: 'search', retrievalType: 'vector', existingService, durable: 'yes', recordModel: 'existing', separateIndex: 'no', searchFreshness: 'real-time' });
+    assert.deepEqual(ids(result), []);
+    assert.ok(result.decisions.some((decision) => decision.outcome.includes(serviceById[existingService].name)));
+    assert.ok(result.ruleIds.includes('vector-existing-first'));
+  }
+  for (const retrievalType of [undefined, 'unknown']) {
+    assert.deepEqual(ids(evaluate({ workload: 'search', dataShape: 'search', retrievalType, separateIndex: 'yes', searchFreshness: 'lag-ok' })), []);
+  }
+  const separate = evaluate({ workload: 'search', dataShape: 'search', retrievalType: 'hybrid', existingService: 'postgres-flex', durable: 'yes', recordModel: 'existing', separateIndex: 'yes', searchFreshness: 'lag-ok' });
+  assert.deepEqual(ids(separate), ['ai-search']);
+  assert.equal(separate.architecture.filter((node) => node.id === 'records').length, 1);
+});
+
+test('graph traversal has qualified evidence and no universal graph promise', () => {
+  const result = evaluate({ workload: 'new-app', persistence: 'durable', dataShape: 'graph', accessPattern: 'graph-traversal' });
+  assert.deepEqual(ids(result), ['cosmos-other-apis']);
+  assert.ok(result.ruleIds.includes('graph-traversal'));
+  assert.ok(result.sourceIds.includes('gremlin-overview'));
+  assert.match(result.unknowns.join(' '), /depth.*latency/);
 });

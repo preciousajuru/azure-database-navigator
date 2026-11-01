@@ -38,8 +38,8 @@ export const scenarios = [
   {
     id: 'rag',
     title: 'RAG application with source documents, state and search',
-    answers: { workload: 'search', persistence: 'durable', dataShape: 'search', accessPattern: 'full-text', constraints: [], operations: 'bursty', geography: 'single-region', recovery: 'important', sourceFiles: 'yes', durable: 'yes', recordModel: 'relational' },
-    expected: ['blob-storage', 'ai-search', 'azure-sql-db']
+    answers: { workload: 'search', persistence: 'durable', dataShape: 'search', accessPattern: 'vector-similarity', retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok', existingService: 'postgres-flex', constraints: [], operations: 'bursty', geography: 'single-region', recovery: 'important', sourceFiles: 'yes', durable: 'yes', recordModel: 'existing' },
+    expected: ['blob-storage', 'ai-search']
   },
   {
     id: 'telemetry',
@@ -49,9 +49,14 @@ export const scenarios = [
   },
   {
     id: 'cache',
-    title: 'Redis cache alongside durable application data',
-    answers: { workload: 'cache', persistence: 'durable', dataShape: 'cache', accessPattern: 'partition-key-lookup', operations: 'bursty', geography: 'single-region', recovery: 'basic', durable: 'yes', recordModel: 'relational' },
-    expected: ['managed-redis', 'azure-sql-db']
+    title: 'Redis cache alongside an existing relational database',
+    answers: { workload: 'cache', persistence: 'durable', dataShape: 'cache', accessPattern: 'partition-key-lookup', operations: 'bursty', geography: 'single-region', recovery: 'basic', durable: 'yes', recordModel: 'existing' },
+    expected: ['managed-redis']
+  },
+  {
+    id: 'new-relational-cache', title: 'New relational application with a regenerable cache',
+    answers: { workload: 'cache', persistence: 'durable', dataShape: 'cache', durable: 'yes', recordModel: 'relational', accessPattern: 'relational-queries', recovery: 'important' },
+    expected: ['azure-sql-db', 'postgres-flex', 'managed-redis']
   },
   {
     id: 'files-only',

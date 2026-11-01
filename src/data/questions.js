@@ -99,7 +99,8 @@ export const questions = [
       { value: 'partition-key-lookup', label: 'Known-key lookups designed around a partition or tenant key' },
       { value: 'graph-traversal', label: 'Traverse many relationships in graph-shaped queries' },
       { value: 'time-window-scan', label: 'Scan and aggregate events by time window' },
-      { value: 'full-text', label: 'Find content by text relevance or similarity' },
+      { value: 'full-text', label: 'Find content by keyword or full-text relevance' },
+      { value: 'vector-similarity', label: 'Find semantically similar content using vector embeddings' },
       { value: 'object-delivery', label: 'Store, retrieve or serve whole files and objects' },
       notSure
     ]
@@ -119,7 +120,7 @@ export const questions = [
     id: 'engine',
     title: 'Is there an existing engine or client contract to preserve?',
     help: 'A framework or programming language alone does not determine the database engine.',
-    when: (a) => ['migration', 'mixed'].includes(a.workload),
+    when: (a) => ['migration', 'mixed'].includes(a.workload) && a.recordModel !== 'existing',
     options: [
       { value: 'sqlserver', label: 'SQL Server' },
       { value: 'postgres', label: 'PostgreSQL' },
@@ -296,6 +297,55 @@ export const questions = [
       { value: 'pitr', label: 'Backups, retention and point-in-time restore after mistakes' },
       { value: 'dr', label: 'Disaster recovery, geo-replication and application failover' },
       { value: 'replicas', label: 'Read replicas, with an independently tested recovery strategy' },
+      notSure
+    ]
+  },
+  {
+    id: 'retrievalType',
+    title: 'What retrieval does the application actually need?',
+    help: 'Keyword search matches text; vector similarity compares embeddings; hybrid combines the two. AI or RAG does not itself establish a vector requirement.',
+    when: (a) => a.workload === 'search' || a.dataShape === 'search' || a.dataKinds?.includes('search') || a.accessPattern === 'vector-similarity',
+    options: [
+      { value: 'keyword', label: 'Keyword / full-text relevance' },
+      { value: 'vector', label: 'Semantic / vector similarity' },
+      { value: 'hybrid', label: 'Hybrid keyword and vector retrieval' },
+      notSure
+    ]
+  },
+  {
+    id: 'existingService',
+    title: 'Which store already holds the searchable records?',
+    help: 'Check whether this store supports the required retrieval before adding another one. This answer does not select or migrate it.',
+    when: (a) => ['vector', 'hybrid'].includes(a.retrievalType),
+    options: [
+      { value: 'azure-sql-db', label: 'Azure SQL Database' },
+      { value: 'postgres-flex', label: 'PostgreSQL Flexible Server' },
+      { value: 'cosmos-nosql', label: 'Cosmos DB for NoSQL' },
+      { value: 'azure-documentdb', label: 'Azure DocumentDB' },
+      { value: 'managed-redis', label: 'Azure Managed Redis' },
+      { value: 'other', label: 'Another store or no existing store' },
+      notSure
+    ]
+  },
+  {
+    id: 'separateIndex',
+    title: 'Is a separate managed search index justified?',
+    help: 'For example, indexing several content sources or search-specific ranking/facets. First check whether the record store already meets the need.',
+    when: (a) => ['keyword', 'vector', 'hybrid'].includes(a.retrievalType),
+    options: [
+      { value: 'yes', label: 'Yes, multiple sources or managed search features justify it' },
+      { value: 'no', label: 'No, first use or assess retrieval in the source store' },
+      notSure
+    ]
+  },
+  {
+    id: 'searchFreshness',
+    title: 'How soon must source changes be searchable?',
+    help: 'A derived index can lag behind its source. A service feature does not prove that the application meets its freshness target.',
+    when: (a) => ['keyword', 'vector', 'hybrid'].includes(a.retrievalType),
+    options: [
+      { value: 'real-time', label: 'Real-time or near-real-time source changes are essential' },
+      { value: 'lag-ok', label: 'Indexing lag is acceptable and can be managed' },
       notSure
     ]
   },
