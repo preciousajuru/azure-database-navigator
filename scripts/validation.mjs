@@ -45,7 +45,7 @@ export function resultIssues(result, serviceById, sourceById, ruleById, capabili
 
 export function evidenceLinkIssues(text, sources) {
   const registered = new Set(sources.map((source) => source.url.replace(/&amp;/g, '&')));
-  const allowed = /^(https:\/\/(github\.com\/preciousajuru\/|preciousajuru\.github\.io\/azure-compute-navigator\/|creativecommons\.org\/licenses\/by\/4\.0\/|azure\.microsoft\.com\/en-us\/pricing\/calculator\/))/;
+  const allowed = /^(https:\/\/(github\.com\/preciousajuru\/|preciousajuru\.github\.io\/azure-(compute|database)-navigator\/|creativecommons\.org\/licenses\/by\/4\.0\/|azure\.microsoft\.com\/en-us\/pricing\/calculator\/))/;
   return [...new Set(text.match(/https:\/\/[^\s)"<>]+/g) || [])].filter((url) => !registered.has(url) && !allowed.test(url)).map((url) => `Unregistered evidence link: ${url}`);
 }
 

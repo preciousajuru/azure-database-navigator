@@ -106,7 +106,7 @@ A separate managed index can be justified for multi-source retrieval or hybrid r
 
 ## Introducing Azure Database Navigator
 
-I built [Azure Database Navigator](https://github.com/preciousajuru/azure-database-navigator) to make those questions easier to organise.
+I built [Azure Database Navigator](https://preciousajuru.github.io/azure-database-navigator/) to make those questions easier to organise. The [source code](https://github.com/preciousajuru/azure-database-navigator) is open.
 
 It asks about workload, persistence, data shape, access patterns, existing engines and required data roles. Migration, retrieval and record-model questions appear when relevant. “Not sure” stays unknown.
 
@@ -114,7 +114,7 @@ It returns a qualified shortlist, a role-based architecture, more questions, or 
 
 There are no scores, guessed prices or compatibility guarantees. It does not select capacity, configure Azure or execute a migration. Answers stay in browser memory; only the theme preference persists.
 
-The screenshots here show the working local build, not a deployed website. The [Compute Navigator](https://preciousajuru.github.io/azure-compute-navigator/) is its separate companion for choosing where the application runs.
+The screenshots were captured from a local build of the same application code. The [Compute Navigator](https://preciousajuru.github.io/azure-compute-navigator/) is its separate companion for choosing where the application runs.
 
 ## The shortlist is the beginning
 
@@ -130,6 +130,6 @@ Start there. The product names become much easier to sort out.
 
 ---
 
-This is an independent educational project, not affiliated with or endorsed by Microsoft. Features, availability and lifecycle can change; verify current official documentation before deployment. The screenshots show the application running locally, not a deployed website.
+This is an independent educational project, not affiliated with or endorsed by Microsoft. Features, availability and lifecycle can change; verify current official documentation before deployment. The screenshots were captured from a local build of the deployed application code.
 
 Original article by Precious Ajuru, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Microsoft product names and documentation remain subject to their owners' terms.

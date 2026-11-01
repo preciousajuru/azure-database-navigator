@@ -1,6 +1,6 @@
 # Publication readiness checklist
 
-This checklist prepares a release. It does **not** authorise enabling GitHub Pages, running deployment, publishing an announcement or claiming a live site.
+This checklist tracks the release. The owner authorised pushing to `main`, enabling GitHub Pages and deploying; the site is live at https://preciousajuru.github.io/azure-database-navigator/. It does **not** authorise publishing the article on Medium or a personal site, or posting the announcement.
 
 ## Repository
 
@@ -9,9 +9,9 @@ This checklist prepares a release. It does **not** authorise enabling GitHub Pag
 - [x] Source register, research method and decision model.
 - [x] Deterministic tests and catalogue-integrity check.
 - [x] CI workflow and manual-only Pages workflow prepared.
-- [ ] Run repository checks in GitHub Actions on the target default branch.
+- [x] Run repository checks in GitHub Actions on the target default branch (CI and the Pages build both run unit, check, build and Chromium suites).
 - [ ] Review all references and service lifecycle notices immediately before release.
-- [ ] Enable GitHub Pages only after the project owner authorizes deployment.
+- [x] Enable GitHub Pages (Actions source) after the project owner authorised deployment, and verify the live application, article page and assets.
 
 ## Product and accessibility
 
