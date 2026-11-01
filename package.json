@@ -1,0 +1,16 @@
+{
+  "name": "azure-database-navigator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An independent, evidence-led guide to Azure data platform choices.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && node scripts/serve.mjs",
+    "test": "node --test",
+    "check": "node scripts/check.mjs"
+  }
+}

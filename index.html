@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f5f8">
+    <meta name="description" content="An independent, evidence-led guide to choosing data stores and database services on Azure.">
+    <title>Azure Database Navigator</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Azure Database Navigator home">
+          <span class="brand-mark" aria-hidden="true">D</span>
+          <span><strong>Azure Database Navigator</strong><small>Evidence-led data decisions</small></span>
+        </a>
+        <div class="topbar-actions">
+          <span class="review-stamp">Technical information reviewed <time datetime="2026-11-01">1 November 2026</time></span>
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="Switch to dark theme" title="Switch theme">◐</button>
+        </div>
+      </header>
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Workspace navigation">
+          <p class="eyebrow">WORKSPACE</p>
+          <nav class="primary-nav" aria-label="Main navigation">
+            <button type="button" class="nav-item is-active" data-view="assessment" aria-current="page"><span aria-hidden="true">◈</span> Find my options</button>
+            <button type="button" class="nav-item" data-view="explore"><span aria-hidden="true">▦</span> Explore services</button>
+            <button type="button" class="nav-item" data-view="compare"><span aria-hidden="true">⇄</span> Compare</button>
+            <button type="button" class="nav-item" data-view="concepts"><span aria-hidden="true">⌘</span> Learn concepts</button>
+          </nav>
+          <div class="sidebar-note">
+            <span class="status-dot" aria-hidden="true"></span>
+            <p><strong>Decision, not sales pitch</strong><br>Requirements first. Unknowns stay visible.</p>
+          </div>
+          <a class="sidebar-link" href="./docs/decision-model.md">How recommendations work <span aria-hidden="true">↗</span></a>
+        </aside>
+        <main id="main" class="main-content" tabindex="-1">
+          <div id="app" aria-live="polite"></div>
+        </main>
+      </div>
+      <footer class="footer">
+        <span>Independent educational tool · Not affiliated with or endorsed by Microsoft</span>
+        <a href="./docs/sources.md">Sources &amp; method</a>
+      </footer>
+    </div>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

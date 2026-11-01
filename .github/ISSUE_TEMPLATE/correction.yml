@@ -1,0 +1,40 @@
+name: Evidence correction
+description: Report a source, capability, lifecycle or recommendation that needs review.
+title: "[Correction]: "
+labels:
+  - evidence
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping keep this educational guide accurate. Please link to official, current evidence when possible.
+  - type: input
+    id: affected
+    attributes:
+      label: Affected service, capability or rule
+      description: Include the service name or stable rule ID if known.
+      placeholder: "For example: PostgreSQL extension allow-list"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What appears incorrect or incomplete?
+    validations:
+      required: true
+  - type: input
+    id: evidence
+    attributes:
+      label: Official source URL
+      description: Prefer Microsoft Learn, Azure Architecture Center, lifecycle or first-party engine documentation.
+    validations:
+      required: true
+  - type: input
+    id: verified
+    attributes:
+      label: Date you checked the source
+      placeholder: "YYYY-MM-DD"
+  - type: textarea
+    id: context
+    attributes:
+      label: Version, API, tier, region or configuration conditions
+      description: Add any conditions that affect the claim.
