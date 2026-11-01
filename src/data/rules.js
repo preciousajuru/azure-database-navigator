@@ -226,10 +226,10 @@ export const rules = [
   {
     id: 'json-also-assess', serviceIds: ['azure-sql-db', 'postgres-flex', 'cosmos-nosql'],
     configuration: 'Relational JSON alternatives remain assessment prompts, not mandatory extra stores or equivalent global writes.',
-    conditions: 'Any document-model shortlist keeps relational JSON alternatives visible unless they are already candidates; geography does not exclude them.',
+    conditions: 'Any document-model shortlist keeps relational JSON alternatives visible unless an existing engine/client contract is declared or they are already candidates; geography does not exclude them.',
     sourceIds: ['sql-json', 'postgres-json', 'postgres-overview', 'cosmos-consistency'], verifiedOn: RULE_REVIEWED_ON,
     limitations: 'Validate exact JSON feature/version, transaction and measured regional latency/write needs.',
-    test: 'global JSON preserves primary distribution candidate and explicit relational assessment alternatives'
+    test: 'document contracts preserve MongoDB and Cassandra choices without cross-engine JSON prompts'
   }
 ];
 

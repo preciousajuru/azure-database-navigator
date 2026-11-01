@@ -51,7 +51,7 @@ Unknown is not unsupported. A result cannot turn missing feature evidence into a
 
 ## Candidate explanation
 
-Every document-model shortlist keeps justified candidates but exposes `alsoAssess` SQL Database/PostgreSQL JSON alternatives unless they are already candidates. Single-region wording concerns query/transaction shape; multi-region wording also names measured distribution/recovery gates. Composite document record roles inherit these prompts from the same policy. These are assessment alternatives, not mandatory additional stores or equivalent global-write guarantees.
+Every document-model shortlist keeps justified candidates but exposes `alsoAssess` SQL Database/PostgreSQL JSON alternatives unless an existing engine/client contract is declared or they are already candidates. Single-region wording concerns query/transaction shape; multi-region wording also names measured distribution/recovery gates. Composite document record roles inherit these prompts from the same policy. These are assessment alternatives, not mandatory additional stores or equivalent global-write guarantees.
 
 A confirmed retained store with explicitly selected source-store retrieval receives a conclusive no-new-database outcome. This does not certify retrieval performance or migration compatibility. Open index-justification, freshness and authoritative-content-source requirements are named explicitly; every insufficient-information result must contain at least one unknown. The pruned UI-answer sweep uses question applicability predicates and removes hidden answers before checking this invariant.
 

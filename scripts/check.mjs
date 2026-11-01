@@ -32,7 +32,7 @@ for (const question of questions) {
 }
 const recommendationTests = await readFile(new URL('../tests/recommendations.test.js', import.meta.url), 'utf8');
 const scenarioFixtures = await readFile(new URL('../src/data/scenarios.js', import.meta.url), 'utf8');
-const testReferences = recommendationTests + scenarioFixtures + await readFile(new URL('../tests/experience.test.js', import.meta.url), 'utf8');
+const testReferences = recommendationTests + scenarioFixtures + await readFile(new URL('../tests/experience.test.js', import.meta.url), 'utf8') + await readFile(new URL('../tests/reachable-results.test.js', import.meta.url), 'utf8');
 
 for (const source of sources) {
   if (!source.url.startsWith('https://')) errors.push(`Source ${source.id} does not use HTTPS.`);

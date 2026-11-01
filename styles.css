@@ -321,7 +321,7 @@ select, .search-field input {
 .candidate-tag, .role-badge {
   flex: 0 1 auto;
   max-width: 45%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   padding: 3px 8px;
   border-radius: 999px;
   background: var(--accent-wash);
@@ -329,6 +329,7 @@ select, .search-field input {
   font-size: 10px;
   font-weight: 700;
 }
+.candidate-tag { flex: none; white-space: nowrap; }
 .candidate-alt { background: var(--surface-strong); color: var(--ink-muted); }
 .result-reason { margin: 12px 0; color: var(--ink-muted); font-size: 13px; }
 .service-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }

@@ -92,6 +92,8 @@ test('all worked scenarios render the correct candidates and multi-store boundar
     await expect(page.locator('#app h1')).toBeFocused();
     if (result.alsoAssess?.length) {
       await expect(page.getByRole('heading', { name: 'Also assess — JSON does not exclude relational engines', exact: true })).toBeVisible();
+    } else if (scenario.id === 'mongodb-migration') {
+      await expect(page.getByRole('heading', { name: 'Also assess — JSON does not exclude relational engines', exact: true })).toHaveCount(0);
     }
     if (scenario.id === 'sqlserver-migration') {
       const performance = page.locator('.result-section').filter({ has: page.getByRole('heading', { name: 'Performance review', exact: true }) });
@@ -109,6 +111,45 @@ test('all worked scenarios render the correct candidates and multi-store boundar
     await noOverflow(page);
     await page.locator('[data-action="restart"]').click();
   }
+});
+
+test('badge, tag, chip and pill words fit across every scenario, explorer family and comparison', async ({ page }) => {
+  const wordsFit = async () => {
+    const failures = await page.evaluate(() => {
+      const failures = [];
+      for (const element of document.querySelectorAll('[class]')) {
+        if (![...element.classList].some((name) => /(?:badge|tag|chip|pill)/.test(name)) || !element.getClientRects().length) continue;
+        const style = getComputedStyle(element);
+        const width = element.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+        const measure = document.createElement('span');
+        Object.assign(measure.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', font: style.font, letterSpacing: style.letterSpacing, textTransform: style.textTransform });
+        document.body.append(measure);
+        for (const word of element.textContent.trim().split(/\s+|(?<=-)/)) {
+          measure.textContent = word;
+          const required = measure.getBoundingClientRect().width;
+          if (required > width + 1) failures.push({ className: element.className, word, required, width });
+        }
+        measure.remove();
+      }
+      return failures;
+    });
+    expect(failures).toEqual([]);
+    await noOverflow(page);
+  };
+  for (const scenario of scenarios) {
+    await page.locator('#scenario-select').selectOption(scenario.id);
+    await wordsFit();
+    await page.locator('[data-action="restart"]').click();
+  }
+  await page.locator('.primary-nav [data-view="explore"]').click();
+  const families = await page.locator('#family-filter option').evaluateAll((options) => options.map((option) => option.value));
+  for (const family of families) {
+    await page.locator('#family-filter').selectOption(family);
+    await page.locator('.service-card details').evaluateAll((details) => details.forEach((detail) => { detail.open = true; }));
+    await wordsFit();
+  }
+  await page.locator('.primary-nav [data-view="compare"]').click();
+  await wordsFit();
 });
 
 test('explorer filtering, aliases, two-to-three service comparison and concepts', async ({ page }) => {

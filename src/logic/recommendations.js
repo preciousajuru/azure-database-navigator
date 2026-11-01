@@ -38,7 +38,7 @@ function getUnknowns(answers) {
 }
 
 function documentAlternatives(answers, candidates) {
-  if (answers.dataShape !== 'documents' || !candidates.length) return [];
+  if (answers.dataShape !== 'documents' || !candidates.length || ['sqlserver', 'postgres', 'mysql', 'mariadb', 'mongodb', 'cassandra'].includes(answers.engine)) return [];
   const distribution = answers.geography?.startsWith('multi-region')
     ? ' Validate measured regional latency, write geography and recovery separately; JSON support does not establish equivalent global writes.'
     : ' Check query patterns and transaction boundaries rather than assuming JSON requires a distributed document store.';
@@ -270,7 +270,7 @@ export function evaluate(input = {}) {
       }
     }
 
-    if (answers.dataShape === 'documents' && answers.geography?.startsWith('multi-region')) {
+    if (answers.dataShape === 'documents' && answers.geography?.startsWith('multi-region') && !['mongodb', 'cassandra'].includes(answers.engine)) {
       recordRule('document-access-pattern');
       candidateList.push(candidate('cosmos-nosql', 'A document data model with confirmed multi-region latency needs makes Cosmos DB for NoSQL worth evaluating.', 'This is not an automatic choice: design partition key, consistency, transaction boundaries, region strategy and cost. A relational system can remain appropriate.'));
     } else if (answers.dataShape === 'documents' && ['document-aggregate', 'partition-key-lookup'].includes(answers.accessPattern) && !['mongodb', 'cassandra'].includes(answers.engine)) {
