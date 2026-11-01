@@ -43,7 +43,7 @@ for (const source of sources) {
 for (const service of services) {
   if (!familyFor(service)) errors.push(`Missing family: ${service.id}`);
   for (const [key, entry] of Object.entries(profileFor(service))) {
-    if (!profileLabels[key] || !entry.text || !entry.condition) errors.push(`Incomplete structured profile: ${service.id}.${key}`);
+    if (!profileLabels[key] || !entry.text || entry.status && !entry.condition) errors.push(`Incomplete structured profile: ${service.id}.${key}`);
     for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Profile ${service.id}.${key} missing source: ${id}`);
   }
   if (!service.summary || !service.model || !service.api || !service.role) errors.push(`Service ${service.id} has incomplete profile fields.`);

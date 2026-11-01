@@ -11,6 +11,7 @@ export function resultIssues(result, serviceById, sourceById, ruleById) {
   const errors = [];
   if (!['primary-candidate', 'shortlist', 'multi-store', 'no-database-needed', 'insufficient-information', 'no-verified-match'].includes(result.kind)) errors.push('Invalid outcome');
   if (!result.title) errors.push('Missing result title');
+  if (result.kind === 'insufficient-information' && !result.unknowns?.length) errors.push('Insufficient information lacks named missing requirements');
   for (const key of ['candidates', 'exclusions', 'decisions', 'unknowns', 'changes', 'sourceIds', 'ruleIds']) {
     if (!Array.isArray(result[key])) errors.push(`Missing result array: ${key}`);
   }

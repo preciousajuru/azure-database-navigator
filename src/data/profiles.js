@@ -7,6 +7,7 @@ export const profileLabels = {
 };
 
 const entry = (text, sourceIds, status = 'conditional') => ({ text, condition: text, sourceIds, status });
+const description = (text, sourceIds) => ({ text, sourceIds });
 const details = {
   'azure-sql-db': {
     source: 'sql-db-overview',
@@ -185,10 +186,10 @@ export function profileFor(service) {
   const detail = details[service.id];
   const sourceIds = detail ? [detail.source] : service.sourceIds;
   const profile = {
-    whatItIs: entry(service.summary, sourceIds, 'supported'),
-    model: entry(service.model, sourceIds, 'supported'),
-    engineApi: entry(service.api, sourceIds, 'supported'),
-    role: entry(service.role, sourceIds, 'supported'),
+    whatItIs: description(service.summary, sourceIds),
+    model: description(service.model, sourceIds),
+    engineApi: description(service.api, sourceIds),
+    role: description(service.role, sourceIds),
     differsFrom: entry(detail?.differsFrom || neighbour[service.id], sourceIds),
     lifecycle: entry(service.lifecycle ? service.summary : 'No retirement notice is recorded in this snapshot; verify current lifecycle before deployment.', sourceIds, service.lifecycle ? 'conditional' : 'unknown'),
     limits: entry(service.caveats.join(' '), sourceIds)

@@ -17,7 +17,7 @@ An independent, evidence-led educational guide to choosing data stores and datab
 - Accessible role/link architecture diagrams, grouped family-labelled explorer profiles, common-dimension comparisons and sourced performance guidance.
 - Existing-first vector retrieval, qualified graph assessment and explicit relational JSON alternatives, without automatic extra-store recommendations.
 
-The service catalogue deliberately records “unknown” when evidence does not establish support. A wire protocol is not feature parity; JSON is not a Cosmos DB shortcut; global users do not automatically require multi-region writes; caches and indexes do not silently become systems of record.
+Document shortlists retain relational JSON assessment alternatives at any geography. Confirmed source-store retrieval can conclude that no new database is selected; genuinely insufficient outcomes name missing requirements. Technical descriptions are separated from support states, and performance evidence is scoped to the candidate engines and retrieval roles. A wire protocol is not feature parity; JSON is not a Cosmos DB shortcut; global users do not automatically require multi-region writes; caches and indexes do not silently become systems of record.
 
 ## Run locally
 

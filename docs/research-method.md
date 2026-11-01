@@ -14,6 +14,8 @@ An official overview may describe a wire protocol or compatibility at a high lev
 
 ## Verification snapshot
 
+Descriptive profile fields are not feature-support claims and display no status chip. Capability and condition fields retain the evidence vocabulary. Result guidance cites the actual engines and roles being assessed: vector selection only in retrieval scope and replica conditions only for matching SQL, PostgreSQL or MySQL candidates.
+
 The initial evidence snapshot was checked on **1 November 2026**. Microsoft Learn pages can change without notice; the app does not perform live checks. Review the current source, date and relevant feature/version/region conditions before relying on any result.
 
 ## How to update a claim

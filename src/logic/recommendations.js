@@ -37,11 +37,23 @@ function getUnknowns(answers) {
   return unknowns;
 }
 
+function documentAlternatives(answers, candidates) {
+  if (answers.dataShape !== 'documents' || !candidates.length) return [];
+  const distribution = answers.geography?.startsWith('multi-region')
+    ? ' Validate measured regional latency, write geography and recovery separately; JSON support does not establish equivalent global writes.'
+    : ' Check query patterns and transaction boundaries rather than assuming JSON requires a distributed document store.';
+  return [
+    { serviceId: 'azure-sql-db', reason: `SQL Database supports JSON alongside relational records. Also assess it when joins, business transactions or a SQL Server contract matter; verify the exact JSON feature and version.${distribution}`, sourceIds: ['sql-json'] },
+    { serviceId: 'postgres-flex', reason: `PostgreSQL supports json/jsonb and JSON indexing. Also assess it for mixed relational/document records; validate the Azure engine version, extensions and any existing engine contract.${distribution}`, sourceIds: ['postgres-json', 'postgres-overview'] }
+  ].filter((item) => !candidates.some((candidate) => candidate.serviceId === item.serviceId));
+}
+
 function evaluateRoles(answers) {
   const wantsSearch = answers.workload === 'search' || answers.dataShape === 'search' || answers.dataKinds?.includes('search') || answers.accessPattern === 'vector-similarity';
   const wantsCache = answers.workload === 'cache' || answers.dataShape === 'cache' || answers.dataKinds?.includes('cache');
   const wantsFiles = answers.sourceFiles === 'yes' || answers.dataKinds?.includes('files');
   const candidates = [];
+  const alsoAssess = [];
   const architecture = [];
   const architectureLinks = [];
   const unknowns = getUnknowns(answers);
@@ -49,9 +61,11 @@ function evaluateRoles(answers) {
   const exclusions = [];
   const ruleIds = new Set(['exclude-retired-new', 'authoritative-role']);
   const sourceIds = new Set(['arch-data-models', 'arch-data-considerations']);
+  let retainedRetrieval = false;
   const add = (id, reason, caveat) => candidates.push(candidate(id, reason, caveat));
   const absorb = (result) => {
     candidates.push(...result.candidates);
+    alsoAssess.push(...(result.alsoAssess || []));
     exclusions.push(...result.exclusions);
     unknowns.push(...result.unknowns);
     result.ruleIds.forEach((id) => ruleIds.add(id));
@@ -94,6 +108,10 @@ function evaluateRoles(answers) {
     const existing = serviceById[answers.existingService];
     const localOptions = existing ? [existing] : (record?.serviceIds || []).map((id) => serviceById[id]);
     const vectorOptions = localOptions.filter((service) => ['supported', 'conditional'].includes(service.capabilities.vectorSearch?.status));
+    if (!record && !wantsFiles) {
+      unknowns.push('Identify and confirm the authoritative content source for retrieval. A derived index still needs originals even when this application does not own durable records.');
+      architecture.push({ id: 'search-source-gap', role: 'Unresolved source', kind: 'unresolved', label: 'Authoritative retrieval source unresolved', serviceIds: [], boundary: 'Identify the retained external source or original files, its access controls and update/deletion ownership; a search index is not the source of truth.' });
+    }
     if (!retrievalKnown) {
       unknowns.push('Retrieval type is unknown; no vector database or separate search index is added.');
     } else {
@@ -112,8 +130,14 @@ function evaluateRoles(answers) {
         }
       } else {
         decisions.push({ id: 'vector-existing-first', outcome: 'No separate index is selected. First assess source-store retrieval; a separate managed index needs justified features, multiple-source integration and acceptable freshness boundaries.' });
+        if (!['yes', 'no'].includes(answers.separateIndex)) unknowns.push('Whether a separate managed index is required is unknown; confirm the retrieval features or multi-source integration that justify it.');
+        if (answers.separateIndex === 'yes' && !['lag-ok', 'real-time'].includes(answers.searchFreshness)) unknowns.push('A separate index is requested but acceptable source-to-index freshness is unknown; define indexing lag before selecting a copied index.');
         if (answers.searchFreshness === 'real-time') unknowns.push('Near-real-time retrieval favours testing the source database first; a copied index is not assumed to make every write immediately searchable.');
       }
+    }
+    if (!candidates.length && record?.kind === 'retained' && retrievalKnown && answers.separateIndex === 'no' && (answers.retrievalType === 'keyword' || vectorOptions.length)) {
+      retainedRetrieval = true;
+      decisions.push({ id: 'vector-existing-first', outcome: 'Retain the authoritative store and test retrieval there; this assessment selects no new store or migration.' });
     }
   }
   if (wantsCache) {
@@ -123,10 +147,12 @@ function evaluateRoles(answers) {
     if (record) architectureLinks.push({ from: 'records', to: 'cache', purpose: 'Invalidate / refresh — design required', boundary: 'Define expiry, cache-miss reloads and invalidation. Test outage independently of authoritative writes; no atomic cross-store update is implied.' });
   }
   candidates.forEach((item) => serviceById[item.serviceId].sourceIds.forEach((id) => sourceIds.add(id)));
+  const kind = architecture.some((node) => ['derived', 'cache'].includes(node.kind)) && architecture.some((node) => ['authoritative', 'retained'].includes(node.kind)) ? 'multi-store' : candidates.length ? 'shortlist' : retainedRetrieval ? 'no-database-needed' : 'insufficient-information';
+  if (kind === 'insufficient-information' && !unknowns.length) unknowns.push('No new store is selected: clarify the required data roles and source-store retrieval capabilities before establishing a match.');
   return {
-    kind: architecture.some((node) => ['derived', 'cache'].includes(node.kind)) && architecture.some((node) => ['authoritative', 'retained'].includes(node.kind)) ? 'multi-store' : candidates.length ? 'shortlist' : 'insufficient-information',
-    title: 'Assess roles without adding unnecessary stores',
-    candidates: uniqueCandidates(candidates), architecture, architectureLinks, decisions, exclusions,
+    kind,
+    title: kind === 'no-database-needed' ? 'Test retrieval in your existing store; no new database selected' : 'Assess roles without adding unnecessary stores',
+    candidates: uniqueCandidates(candidates), alsoAssess: alsoAssess.filter((item) => !candidates.some((candidate) => candidate.serviceId === item.serviceId)), architecture, architectureLinks, decisions, exclusions,
     unknowns: [...new Set(unknowns)],
     changes: ['First test whether the authoritative store can meet retrieval requirements. Separate stores only for documented roles.', 'Select one authoritative platform alternative; independent stores are not automatically transactionally consistent.'],
     sourceIds: [...sourceIds], ruleIds: [...ruleIds]
@@ -335,10 +361,7 @@ export function evaluate(input = {}) {
 
   const qualificationNeeded = unknowns.length > 0 || candidates.some((item) => item.caveat);
   const kind = candidates.length === 1 && !qualificationNeeded ? 'primary-candidate' : 'shortlist';
-  const alsoAssess = answers.dataShape === 'documents' && answers.geography?.startsWith('multi-region') ? [
-    { serviceId: 'azure-sql-db', reason: 'SQL Database supports JSON alongside relational records. Assess it when joins/transactions or a retained SQL contract matter; separately validate regional latency, write geography and the exact JSON feature/version.', sourceIds: ['sql-json'] },
-    { serviceId: 'postgres-flex', reason: 'PostgreSQL supports json/jsonb and JSON indexing. Assess it for mixed relational/document records or existing PostgreSQL expertise; validate Azure engine version and a measured distribution/recovery design rather than assuming Cosmos-equivalent global writes.', sourceIds: ['postgres-json', 'postgres-overview'] }
-  ] : [];
+  const alsoAssess = documentAlternatives(answers, candidates);
   if (alsoAssess.length) recordRule('json-also-assess');
   return {
     kind,

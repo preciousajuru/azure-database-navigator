@@ -38,7 +38,7 @@ test('all profiles have common fields and registered evidence with no generic co
     const profile = profileFor(service);
     assert.deepEqual(Object.keys(profile).sort(), Object.keys(profileLabels).sort());
     for (const entry of Object.values(profile)) {
-      assert.ok(entry.text && entry.condition);
+      assert.ok(entry.text && (!entry.status || entry.condition));
       assert.ok(entry.sourceIds.length && entry.sourceIds.every((id) => sourceById[id]), service.id);
     }
   }
@@ -48,10 +48,10 @@ test('all profiles have common fields and registered evidence with no generic co
 
 test('comparison distinguishes all five states and engine identities without contradictory unknowns', () => {
   const rows = comparisonRows(services);
-  const states = new Set(rows.flatMap((row) => row.cells.map((cell) => cell.status)));
+  const states = new Set(rows.flatMap((row) => row.cells.map((cell) => cell.status)).filter(Boolean));
   assert.deepEqual([...states].sort(), ['conditional', 'not-applicable', 'supported', 'unknown', 'unsupported']);
   const engine = comparisonRows([serviceById['azure-sql-db'], serviceById['postgres-flex']]).find((row) => row.label === 'Engine / API');
-  assert.ok(engine.cells.every((cell) => cell.status === 'supported'));
+  assert.ok(engine.cells.every((cell) => cell.status === undefined));
   assert.notEqual(engine.cells[0].text, engine.cells[1].text);
 });
 
@@ -60,7 +60,7 @@ test('global JSON preserves primary distribution candidate and explicit relation
   assert.deepEqual(result.candidates.map((item) => item.serviceId), ['cosmos-nosql']);
   assert.deepEqual(result.alsoAssess.map((item) => item.serviceId), ['azure-sql-db', 'postgres-flex']);
   assert.ok(result.alsoAssess.every((item) => item.sourceIds.every((id) => sourceById[id])));
-  assert.equal(evaluate({ workload: 'new-app', dataShape: 'documents', accessPattern: 'document-aggregate' }).alsoAssess.length, 0);
+  assert.equal(evaluate({ workload: 'new-app', dataShape: 'documents', accessPattern: 'document-aggregate' }).alsoAssess.length, 2);
 });
 
 test('performance guidance is role-specific, sourced and never a benchmark', () => {

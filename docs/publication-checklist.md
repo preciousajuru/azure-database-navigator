@@ -49,7 +49,7 @@ The local checks on 1 November 2026 cover deterministic rules, catalogue/source 
 
 A read-only pre-publication security review found no reportable vulnerability in the static/runtime, Markdown build, loopback server or workflow boundary. Advisory and targeted credential checks do not establish package provenance, exclude future vulnerabilities or substitute for a comprehensive organisational secret scan.
 
-The targeted repository scan checks private-key blocks, common GitHub/AWS token patterns and Azure Storage account-key strings. It is not a comprehensive secret certification. The corrected suite contains 64 Node tests and 56 Chromium workflow/accessibility tests; the full build validates 9 HTML pages and includes 8 genuine screenshots.
+The targeted repository scan checks private-key blocks, common GitHub/AWS token patterns and Azure Storage account-key strings. It is not a comprehensive secret certification. The corrected suite contains 68 Node tests and 56 Chromium workflow/accessibility tests; the full build validates 9 HTML pages and includes 8 genuine screenshots. A 615,528-result sweep prunes answers using question applicability and checks named unknowns plus document alternatives; it is not an exhaustive proof across every configuration input.
 
 Publication still requires owner approval, GitHub Actions verification, current external source/link review, actual screen-reader review and independently verified public application/article URLs after authorised deployment.
 

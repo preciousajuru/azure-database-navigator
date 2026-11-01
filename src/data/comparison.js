@@ -43,7 +43,7 @@ export const capabilityLabels = {
   featureCompatibility: 'Source-engine feature compatibility',
   newDeployment: 'New deployment lifecycle'
 };
-const specificKeys = ['nativeThreePartNameQueries', 'vectorSearch', 'graphTraversal', 'featureCompatibility', 'newDeployment'];
+const specificKeys = ['nativeThreePartNameQueries', 'vectorSearch', 'graphTraversal', 'featureCompatibility', 'operatingSystemControl', 'newDeployment'];
 
 export function comparisonRows(selected) {
   const common = Object.keys(profileLabels).map((key) => ({

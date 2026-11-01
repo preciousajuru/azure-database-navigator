@@ -87,7 +87,7 @@ test('every profile explicitly separates evidence from unresolved review dimensi
     assert.equal(Object.keys(profileFor(service)).length, 15);
     for (const entry of Object.values(profileFor(service))) {
       assert.ok(entry.sourceIds.every((id) => sourceById[id]));
-      assert.ok(entry.condition || entry.status === 'supported');
+      assert.ok(!entry.status || entry.condition);
     }
   }
   assert.equal(serviceById['azure-sql-db'].capabilities.nativeThreePartNameQueries.status, 'unsupported');

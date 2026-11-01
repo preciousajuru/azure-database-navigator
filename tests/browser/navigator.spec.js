@@ -90,6 +90,14 @@ test('all worked scenarios render the correct candidates and multi-store boundar
     await expect(page.locator('#app h1')).toHaveText(result.title);
     await expect(page.locator('.result-card h3')).toHaveText(result.candidates.map((item) => serviceById[item.serviceId].name));
     await expect(page.locator('#app h1')).toBeFocused();
+    if (result.alsoAssess?.length) {
+      await expect(page.getByRole('heading', { name: 'Also assess — JSON does not exclude relational engines', exact: true })).toBeVisible();
+    }
+    if (scenario.id === 'sqlserver-migration') {
+      const performance = page.locator('.result-section').filter({ has: page.getByRole('heading', { name: 'Performance review', exact: true }) });
+      await expect(performance.locator('a[href*="vector-search"]')).toHaveCount(0);
+      await expect(performance.locator('a[href*="/postgresql/"], a[href*="/mysql/"]')).toHaveCount(0);
+    }
     if (result.kind === 'multi-store') {
       await expect(page.getByRole('heading', { name: 'Architecture responsibilities' })).toBeVisible();
       await expect(page.locator('.architecture-node')).toHaveCount(result.architecture.length);
@@ -107,6 +115,11 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await page.getByRole('button', { name: 'Explore Azure Databases', exact: true }).first().click();
   await expect(page.locator('#app h1')).toBeFocused();
   await expect(page.locator('.service-card')).toHaveCount(24);
+  const mi = page.locator('.service-card').filter({ has: page.getByRole('heading', { name: 'Azure SQL Managed Instance', exact: true }) });
+  await mi.getByText('Technical profile: compatibility, operations and configuration', { exact: true }).click();
+  for (const label of ['What it is', 'Data model', 'Engine / API', 'Data role']) {
+    await expect(mi.locator('.profile-review dt').filter({ hasText: label }).locator('.capability-chip')).toHaveCount(0);
+  }
   await page.getByRole('searchbox').pressSequentially('vCore');
   await expect(page.locator('.service-card h3')).toHaveText(['Azure DocumentDB']);
   await expect(page.getByRole('searchbox')).toBeFocused();
@@ -117,6 +130,10 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page.locator('#family-filter')).toBeFocused();
   await page.getByRole('button', { name: 'Compare Services', exact: true }).click();
   await expect(page.locator('.comparison-table')).toBeVisible();
+  for (const label of ['What it is', 'Data model', 'Engine / API', 'Data role']) {
+    const row = page.locator('.comparison-table tr').filter({ has: page.getByRole('rowheader', { name: label, exact: true }) });
+    await expect(row.locator('.capability-chip')).toHaveCount(0);
+  }
   await page.locator('.compare-picker input[data-service="azure-sql-mi"]').check();
   await expect(page.locator('.compare-picker input:checked')).toHaveCount(3);
   await expect(page.locator('.compare-picker input[data-service="mysql-flex"]')).toBeDisabled();
