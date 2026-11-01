@@ -93,6 +93,8 @@ test('all worked scenarios render the correct candidates and multi-store boundar
     if (result.kind === 'multi-store') {
       await expect(page.getByRole('heading', { name: 'Architecture responsibilities' })).toBeVisible();
       await expect(page.locator('.architecture-node')).toHaveCount(result.architecture.length);
+      await expect(page.locator('.architecture-diagram')).toBeVisible();
+      await expect(page.locator('.diagram-edge svg')).toHaveCount(result.architectureLinks.length);
       await expect(page.locator('.architecture-flow')).toBeVisible();
       await expect(page.locator('.architecture-flow')).toContainText(/failure|outage|rebuild/i);
     }
@@ -109,7 +111,8 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page.locator('.service-card h3')).toHaveText(['Azure DocumentDB']);
   await expect(page.getByRole('searchbox')).toBeFocused();
   await page.getByRole('searchbox').fill('');
-  await page.locator('#family-filter').selectOption('Cache');
+  await expect(page.locator('.family-section')).toHaveCount(6);
+  await page.locator('#family-filter').selectOption('Caching');
   await expect(page.locator('.service-card')).toHaveCount(2);
   await expect(page.locator('#family-filter')).toBeFocused();
   await page.getByRole('button', { name: 'Compare Services', exact: true }).click();
@@ -125,7 +128,7 @@ test('explorer filtering, aliases, two-to-three service comparison and concepts'
   await expect(page.locator('.table-wrap')).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await page.getByRole('button', { name: 'Learn the Concepts', exact: true }).click();
-  await expect(page.locator('.concept-card')).toHaveCount(6);
+  await expect(page.locator('.concept-card')).toHaveCount(7);
   await page.getByRole('link', { name: 'Read the article' }).click();
   await expect(page).toHaveURL(/\/azure-database-navigator\/docs\/article\.html$/);
   await expect(page.locator('article img')).toHaveCount(2);

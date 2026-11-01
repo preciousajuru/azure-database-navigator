@@ -51,6 +51,10 @@ Unknown is not unsupported. A result cannot turn missing feature evidence into a
 
 ## Candidate explanation
 
+Global document results keep the justified Cosmos DB candidate but expose `alsoAssess` SQL Database/PostgreSQL alternatives with JSON evidence and relational/distribution conditions. These are additional assessment prompts, not extra mandatory stores or equivalent global-write guarantees.
+
+The common technical profile has 15 curated fields. Comparison uses the same model/engine/API/role/operations/scaling/recovery/network/cost/lifecycle dimensions for every service, followed by relevant named requirements. A different engine contract can be not applicable, never a misleading unknown engine identity. Conditions and unknown verification tasks are displayed in each cell. Profile sources and performance guidance are checked alongside recommendation evidence.
+
 Each result candidate includes a human-readable reason, optional validation caveat, service model, API/protocol, role, capability states and source links. Exclusions require a cited documented constraint. Remaining operations, cost drivers and recovery questions are shown separately from the service choice.
 
 The stable rule register in `src/data/rules.js` records each rule's service IDs, conditions, configuration boundary, source IDs, verification date, limitations and a test reference. The result view surfaces the applied rule IDs and their configuration conditions.
@@ -73,6 +77,6 @@ The scenario fixtures in `src/data/scenarios.js` are acceptance examples for all
 - The app does not fetch live Azure pricing, regions, retirement status or product availability.
 - The source verification date is 1 November 2026. A later source update can make a claim stale; review source metadata before release.
 - Automated integrity checks reject review dates older than 180 days; update them only after re-verifying the source.
-- Common profile review dimensions explicitly mark missing version, transactions, scaling, recovery, networking and pricing evidence as unknown rather than guessing.
+- Service-specific profiles mark unverified configuration, recovery, networking and cost details unknown rather than guessing; they do not select versions, regions or tiers.
 - The recommendation data does not decide schema, partition key, topology, capacity, backup policy, security architecture or migration execution.
 - The assessment is browser-only. Answers and optional notes remain in memory; only the light/dark theme preference is stored locally.

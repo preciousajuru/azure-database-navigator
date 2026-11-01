@@ -335,10 +335,16 @@ export function evaluate(input = {}) {
 
   const qualificationNeeded = unknowns.length > 0 || candidates.some((item) => item.caveat);
   const kind = candidates.length === 1 && !qualificationNeeded ? 'primary-candidate' : 'shortlist';
+  const alsoAssess = answers.dataShape === 'documents' && answers.geography?.startsWith('multi-region') ? [
+    { serviceId: 'azure-sql-db', reason: 'SQL Database supports JSON alongside relational records. Assess it when joins/transactions or a retained SQL contract matter; separately validate regional latency, write geography and the exact JSON feature/version.', sourceIds: ['sql-json'] },
+    { serviceId: 'postgres-flex', reason: 'PostgreSQL supports json/jsonb and JSON indexing. Assess it for mixed relational/document records or existing PostgreSQL expertise; validate Azure engine version and a measured distribution/recovery design rather than assuming Cosmos-equivalent global writes.', sourceIds: ['postgres-json', 'postgres-overview'] }
+  ] : [];
+  if (alsoAssess.length) recordRule('json-also-assess');
   return {
     kind,
     title: kind === 'primary-candidate' ? 'A primary candidate to validate' : 'A qualified shortlist',
     candidates,
+    alsoAssess,
     exclusions,
     decisions,
     unknowns: [...new Set(unknowns)],
@@ -346,7 +352,7 @@ export function evaluate(input = {}) {
       'Confirm target regions, service tier, version, configuration, security, availability and recovery requirements.',
       'Review current pricing for the actual workload; this navigator does not estimate or rank cost.'
     ],
-    sourceIds: [...new Set(candidates.flatMap((item) => serviceById[item.serviceId].sourceIds).concat(exclusions.flatMap((item) => item.sourceIds)))],
+    sourceIds: [...new Set(candidates.flatMap((item) => serviceById[item.serviceId].sourceIds).concat(exclusions.flatMap((item) => item.sourceIds), alsoAssess.flatMap((item) => item.sourceIds)))],
     ruleIds: [...appliedRuleIds]
   };
 }

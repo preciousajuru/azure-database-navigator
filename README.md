@@ -14,6 +14,8 @@ An independent, evidence-led educational guide to choosing data stores and datab
 - Document, distributed and API offerings: Cosmos DB for NoSQL, Cosmos DB for MongoDB RU-based, Azure DocumentDB (the current name for the vCore-based offering), other Cosmos APIs and Apache Cassandra options.
 - Cache, file/object, search and analytics roles: Azure Managed Redis, Blob Storage, Table Storage, Data Lake Storage Gen2, Azure AI Search, Azure Data Explorer, Fabric Warehouse/Lakehouse/Eventhouse and OneLake.
 - Multi-store designs, migration compatibility, service lifecycles, RPO/RTO, residency, network and operational questions.
+- Accessible role/link architecture diagrams, grouped family-labelled explorer profiles, common-dimension comparisons and sourced performance guidance.
+- Existing-first vector retrieval, qualified graph assessment and explicit relational JSON alternatives, without automatic extra-store recommendations.
 
 The service catalogue deliberately records “unknown” when evidence does not establish support. A wire protocol is not feature parity; JSON is not a Cosmos DB shortcut; global users do not automatically require multi-region writes; caches and indexes do not silently become systems of record.
 

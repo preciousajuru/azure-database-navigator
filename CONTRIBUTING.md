@@ -11,6 +11,8 @@ Thank you for helping improve Azure Database Navigator. The project is an indepe
 - Keep product APIs, engines, service tiers, operating models, caches, object stores, search indexes and analytics services distinct.
 - Do not add prices, performance promises, compliance claims or feature parity without direct, current evidence.
 - Add a deterministic test for each new rule, including the boundary that must not trigger it.
+- Keep the common profile/comparison dimensions and their five evidence states in sync. Use specific service/feature sources, not hub-only capability citations; test family text/line contrast and retain non-colour role labels.
+- Multi-store nodes carry role/kind/label/platform alternatives/boundary; retain exactly one record node for known durable models. Existing stores are retained, not selected. Vector retrieval checks the source store before adding an index; graph and JSON alternatives need explicit sources.
 
 ## Local checks
 

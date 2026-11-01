@@ -1,4 +1,5 @@
 import { REVIEWED_ON } from './sources.js';
+import { familyFor } from './families.js';
 
 const cap = (status, sourceIds = [], condition = '') => ({ status, sourceIds, condition });
 
@@ -292,16 +293,8 @@ export const services = [
   }
 ].map((service) => ({
   ...service,
-  verifiedOn: REVIEWED_ON,
-  reviewDimensions: {
-    versionsAndCompatibility: service.capabilities.featureCompatibility || service.capabilities.requiredExtensions || cap('unknown', service.sourceIds, 'Exact supported versions, driver/dialect behaviour and feature restrictions require the current service-specific matrix.'),
-    transactionsAndConsistency: service.capabilities.transactionalBoundary || cap('unknown', service.sourceIds, 'Confirm actual atomicity, isolation, consistency and concurrency boundaries for the engine/API; a data-model label is not a transaction guarantee.'),
-    scaling: cap('unknown', service.sourceIds, 'Verify compute, storage, throughput, replicas and any scale-out restrictions. No tier, capacity, vCore or RU/s quantity is selected.'),
-    availabilityAndRecovery: cap('unknown', service.sourceIds, 'Check tier/region-specific HA, zone redundancy, backups, retention, PITR and DR; test restore and application failover against RPO/RTO.'),
-    securityAndNetworking: cap('unknown', service.sourceIds, 'Verify Entra versus native authentication, managed identity, keys/encryption, private/hybrid access, RBAC and auditing for this exact service.'),
-    pricingDimensions: cap('unknown', service.sourceIds, 'Review the applicable compute, storage, throughput, backup, transfer, licence and operational charges using current regional prices.'),
-    managementResponsibilities: cap('conditional', service.sourceIds, service.id === 'sql-server-vm' ? 'Microsoft provides Azure infrastructure; the customer plans VM/OS and SQL Server patching, backups, upgrades, HA/DR and database operations.' : 'Verify the service’s managed-platform responsibilities; the customer still owns data/schema, application access, query/index tuning, configuration, monitoring, recovery testing and incident response.')
-  }
+  family: familyFor(service).label,
+  verifiedOn: REVIEWED_ON
 }));
 
 export const serviceById = Object.fromEntries(services.map((service) => [service.id, service]));

@@ -222,6 +222,14 @@ export const rules = [
     sourceIds: ['gremlin-overview', 'fabric-graph', 'arch-data-models'], verifiedOn: RULE_REVIEWED_ON,
     limitations: 'Size/depth/latency/TinkerPop/region/lifecycle need verification. Fabric graph is further assessment guidance, not a selected OLTP replacement.',
     test: 'graph traversal has qualified evidence and no universal graph promise'
+  },
+  {
+    id: 'json-also-assess', serviceIds: ['azure-sql-db', 'postgres-flex', 'cosmos-nosql'],
+    configuration: 'Relational JSON alternatives remain assessment prompts, not mandatory extra stores or equivalent global writes.',
+    conditions: 'Document data and multi-region requirements surface a Cosmos candidate without excluding relational JSON support.',
+    sourceIds: ['sql-json', 'postgres-json', 'postgres-overview', 'cosmos-consistency'], verifiedOn: RULE_REVIEWED_ON,
+    limitations: 'Validate exact JSON feature/version, transaction and measured regional latency/write needs.',
+    test: 'global JSON preserves primary distribution candidate and explicit relational assessment alternatives'
   }
 ];
 

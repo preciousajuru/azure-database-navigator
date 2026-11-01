@@ -1,6 +1,6 @@
 # Architecture and build
 
-Architecture data describes roles independently from candidates. A transactional record node can carry SQL Database OR PostgreSQL (or a narrower engine-constrained list), but represents ONE store. Retained stores are visible with no selected platform or inferred migration. Document roles reuse document assessment rules; unknown roles are unresolved. Links use role IDs and carry design/failure notes, not a fabricated synchronisation implementation. and build
+Architecture data describes roles independently from candidates. A transactional record node can carry SQL Database OR PostgreSQL (or a narrower engine-constrained list), but represents ONE store. Retained stores are visible with no selected platform or inferred migration. Document roles reuse document assessment rules; unknown roles are unresolved. Links use role IDs and carry design/failure notes, not a fabricated synchronisation implementation.
 
 Azure Database Navigator is a client-only static application. It does not call Azure, an AI model, a backend, telemetry, a database or a runtime third-party service. Assessment state is in page memory and is never added to URLs. Only the theme preference is stored in local storage.
 
@@ -9,6 +9,9 @@ Azure Database Navigator is a client-only static application. It does not call A
 | Concern | Source |
 |---|---|
 | Service/API/engine catalogue and capability states | `src/data/services.js` |
+| Service-specific profiles / comparison dimensions | `src/data/profiles.js`, `src/data/comparison.js` |
+| Family taxonomy / contrast-tested theme tokens | `src/data/families.js` |
+| Performance concept / relevant result guidance | `src/data/performance.js` |
 | Dated evidence register | `src/data/sources.js` |
 | Assessment questions and applicability predicates | `src/data/questions.js` |
 | Stable decision rules, evidence boundaries and tests | `src/data/rules.js` |
@@ -26,6 +29,10 @@ Search and cache are additional roles only when confirmed. Original files and ap
 Unknown source-file or application-state requirements do not create new stores by default. An existing engine candidate is reused when it can own application state. Keeping an existing database is an explicit assessment option.
 
 ## Build pipeline
+
+The inline SVG/CSS architecture diagram groups original/retained data above derived copies and labels each directional connection. Solid, dashed, double and dotted borders convey roles without colour alone. The connection list is its accessible text equivalent, with synchronisation and independent failure notes. Mobile layouts stack without page overflow.
+
+Six families distinguish relational, document/distributed, caching, object/file, search/retrieval and analytics/telemetry. Table Storage belongs to document/distributed because it stores key/attribute records. OneLake belongs to object/file because it is storage, not a query engine; Warehouse, Lakehouse and Eventhouse are analytics experiences. ADLS is a Blob capability set, not another independent engine. Contrast tests check family text on theme surfaces and diagram lines; every colour accompanies a text label.
 
 `npm ci` installs pinned build/test tools. `npm run build` cleans only the generated `dist/` directory, copies runtime assets and actual screenshots, renders original Markdown documentation using `marked`, and creates portable article copies.
 

@@ -8,6 +8,9 @@ import { serviceById } from '../src/data/services.js';
 import { evaluate } from '../src/logic/recommendations.js';
 import { verificationIssue, resultIssues, evidenceLinkIssues, isHubSource } from './validation.mjs';
 import { readFile } from 'node:fs/promises';
+import { profileFor, profileLabels } from '../src/data/profiles.js';
+import { familyFor } from '../src/data/families.js';
+import { performanceGuidance } from '../src/data/performance.js';
 
 const errors = [];
 const unique = (items, label) => {
@@ -29,7 +32,7 @@ for (const question of questions) {
 }
 const recommendationTests = await readFile(new URL('../tests/recommendations.test.js', import.meta.url), 'utf8');
 const scenarioFixtures = await readFile(new URL('../src/data/scenarios.js', import.meta.url), 'utf8');
-const testReferences = recommendationTests + scenarioFixtures;
+const testReferences = recommendationTests + scenarioFixtures + await readFile(new URL('../tests/experience.test.js', import.meta.url), 'utf8');
 
 for (const source of sources) {
   if (!source.url.startsWith('https://')) errors.push(`Source ${source.id} does not use HTTPS.`);
@@ -38,6 +41,11 @@ for (const source of sources) {
   if (issue) errors.push(`Source ${source.id}: ${issue}`);
 }
 for (const service of services) {
+  if (!familyFor(service)) errors.push(`Missing family: ${service.id}`);
+  for (const [key, entry] of Object.entries(profileFor(service))) {
+    if (!profileLabels[key] || !entry.text || !entry.condition) errors.push(`Incomplete structured profile: ${service.id}.${key}`);
+    for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Profile ${service.id}.${key} missing source: ${id}`);
+  }
   if (!service.summary || !service.model || !service.api || !service.role) errors.push(`Service ${service.id} has incomplete profile fields.`);
   if (!service.sourceIds.length) errors.push(`Service ${service.id} has no evidence source.`);
   for (const id of service.sourceIds) if (!sourceById[id]) errors.push(`Service ${service.id} references missing source ${id}.`);
@@ -64,6 +72,7 @@ for (const service of services) {
 }
 
 errors.push(...evidenceLinkIssues(await readFile(new URL('../docs/article.md', import.meta.url), 'utf8'), sources));
+for (const entry of performanceGuidance) for (const id of entry.sourceIds) if (!sourceById[id]) errors.push(`Missing performance source: ${id}`);
 for (const recordModel of ['relational', 'documents', 'existing', 'unknown']) {
   const result = evaluate({ workload: 'mixed', dataShape: 'mixed', dataKinds: ['records', 'files', 'search', 'cache'], durable: 'yes', recordModel, retrievalType: 'hybrid', separateIndex: 'yes', searchFreshness: 'lag-ok' });
   errors.push(...resultIssues(result, serviceById, sourceById, ruleById));

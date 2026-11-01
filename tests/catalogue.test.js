@@ -4,6 +4,7 @@ import { services, serviceById } from '../src/data/services.js';
 import { sources, sourceById } from '../src/data/sources.js';
 import { getQuestions } from '../src/data/questions.js';
 import { rules, ruleById } from '../src/data/rules.js';
+import { profileFor } from '../src/data/profiles.js';
 
 test('service and source identifiers are unique and all material references resolve', () => {
   assert.equal(new Set(services.map((service) => service.id)).size, services.length);
@@ -83,8 +84,8 @@ test('no-storage and keep-existing flows skip unnecessary configuration question
 test('every profile explicitly separates evidence from unresolved review dimensions', () => {
   for (const service of services) {
     assert.equal(service.verifiedOn, '2026-11-01');
-    assert.equal(Object.keys(service.reviewDimensions).length, 7);
-    for (const entry of Object.values(service.reviewDimensions)) {
+    assert.equal(Object.keys(profileFor(service)).length, 15);
+    for (const entry of Object.values(profileFor(service))) {
       assert.ok(entry.sourceIds.every((id) => sourceById[id]));
       assert.ok(entry.condition || entry.status === 'supported');
     }

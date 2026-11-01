@@ -4,6 +4,10 @@ import { services, serviceById } from './data/services.js';
 import { sourceById } from './data/sources.js';
 import { ruleById } from './data/rules.js';
 import { evaluate } from './logic/recommendations.js';
+import { families, familyFor } from './data/families.js';
+import { profileFor, profileLabels } from './data/profiles.js';
+import { comparisonRows, capabilityLabels } from './data/comparison.js';
+import { guidanceFor, performanceGuidance } from './data/performance.js';
 
 const root = document.querySelector('#app');
 const nav = document.querySelector('.primary-nav');
@@ -129,19 +133,41 @@ function capabilityStatus(status) {
 
 function sourceLinks(ids = []) {
   const entries = [...new Set(ids)].map((id) => sourceById[id]).filter(Boolean);
-  return entries.map((source) => `<a href="${escapeHTML(source.url)}" target="_blank" rel="noreferrer">${escapeHTML(source.title)} ↗</a>`).join('');
+  return entries.map((source) => `<a href="${escapeHTML(source.url)}" target="_blank" rel="noreferrer">${escapeHTML(source.title)} ↗</a>`).join(' <span aria-hidden="true"> · </span> ');
 }
 
 function reviewDetails(service) {
-  return `<details><summary>Versions, operations, recovery, networking and cost review</summary><dl class="profile-review">${Object.entries(service.reviewDimensions).map(([name, entry]) => `<div><dt>${escapeHTML(name.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`))} ${capabilityStatus(entry.status)}</dt><dd>${escapeHTML(entry.condition)} ${sourceLinks(entry.sourceIds)}</dd></div>`).join('')}</dl><p>Customer tasks to plan: schema changes, index/query tuning, version upgrades, capacity monitoring, least privilege, secret handling, auditing, restore/failover testing and incident response. Verify which engine/OS patching tasks Microsoft manages for this specific service.</p><p>Review snapshot: ${escapeHTML(service.verifiedOn)}. ${escapeHTML(service.lifecycle ? 'Consult the documented retirement notice.' : 'No retirement notice is recorded here; recheck current lifecycle guidance before deployment.')}</p></details>`;
+  return `<details><summary>Technical profile: compatibility, operations and configuration</summary><dl class="profile-review">${Object.entries(profileFor(service)).map(([name, entry]) => `<div><dt>${escapeHTML(profileLabels[name])} ${capabilityStatus(entry.status)}</dt><dd>${escapeHTML(entry.text)} <span class="profile-sources">${sourceLinks(entry.sourceIds)}</span></dd></div>`).join('')}</dl><p>Review snapshot: ${escapeHTML(service.verifiedOn)}. Unknown fields require verification; a source link is not a guarantee for every configuration.</p></details>`;
+}
+
+function familyAttributes(service) {
+  return `data-family="${familyFor(service).id}"`;
+}
+
+function renderArchitecture(result) {
+  if (!result.architecture?.length) return '';
+  const nodes = (items) => items.map((item) => `<article class="architecture-node node-${item.kind}" ${item.serviceIds.length ? familyAttributes(serviceById[item.serviceIds[0]]) : ''}>
+    <p class="eyebrow">${escapeHTML(item.role)} · ${escapeHTML(item.kind)}${item.serviceIds.length ? ` · ${escapeHTML(familyFor(serviceById[item.serviceIds[0]]).label)}` : ''}</p>
+    <h3>${escapeHTML(item.label)}</h3><p>${item.serviceIds.map((id) => escapeHTML(serviceById[id].name)).join(' OR ') || 'No new service selected'}</p>
+    <p>${escapeHTML(item.boundary)}</p></article>`).join('');
+  const label = (id) => result.architecture.find((node) => node.id === id)?.label || id;
+  const sourceNodes = result.architecture.filter((node) => !['derived', 'cache'].includes(node.kind));
+  const copies = result.architecture.filter((node) => ['derived', 'cache'].includes(node.kind));
+  return `<section class="result-section" aria-label="Architecture responsibilities"><h2>Architecture responsibilities</h2>
+    <figure class="architecture-diagram"><figcaption>One platform per authoritative role. Solid: original data; dashed: regenerable copies; double: retained store; dotted: unresolved. Links are design responsibilities, not implemented integration.</figcaption>
+    <div class="diagram-lane">${nodes(sourceNodes)}</div>
+    ${result.architectureLinks?.length ? `<div class="diagram-links" aria-hidden="true">${result.architectureLinks.map((link, index) => `<div class="diagram-edge"><span>${escapeHTML(label(link.from))}</span><svg viewBox="0 0 80 90" width="80" height="90" focusable="false"><defs><marker id="arrow-${index}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker></defs><path d="M 40 4 L 40 80" marker-end="url(#arrow-${index})"/></svg><strong>${escapeHTML(link.purpose)}</strong><span>${escapeHTML(label(link.to))}</span></div>`).join('')}</div>` : ''}
+    <div class="diagram-lane">${nodes(copies)}</div></figure>
+    ${result.architectureLinks?.length ? `<ol class="architecture-flow" aria-label="Accessible connections, synchronisation and failure boundaries">${result.architectureLinks.map((link) => `<li><strong>${escapeHTML(label(link.from))} → ${escapeHTML(label(link.to))}</strong><p>${escapeHTML(link.purpose)}</p><p>${escapeHTML(link.boundary)}</p></li>`).join('')}</ol>` : ''}
+    <p>Independent stores are not automatically transactionally consistent. ${sourceLinks(['cache-aside', 'vector-selection'])}</p></section>`;
 }
 
 function renderResults(result) {
   const candidates = result.candidates.map((item, index) => {
     const service = serviceById[item.serviceId];
     const capEntries = Object.entries(service.capabilities);
-    return `<article class="result-card ${index === 0 && result.kind !== 'multi-store' ? 'result-card-primary' : ''}">
-      <div class="result-card-top"><div><p class="eyebrow">${escapeHTML(service.family)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div>${result.kind === 'multi-store' ? `<span class="candidate-tag">${escapeHTML(service.role)}</span>` : index === 0 ? '<span class="candidate-tag">Candidate</span>' : '<span class="candidate-tag candidate-alt">Alternative</span>'}</div>
+    return `<article ${familyAttributes(service)} class="result-card ${index === 0 && result.kind !== 'multi-store' ? 'result-card-primary' : ''}">
+      <div class="result-card-top"><div><p class="eyebrow">${escapeHTML(familyFor(service).label)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div>${result.kind === 'multi-store' ? `<span class="candidate-tag">${escapeHTML(service.role)}</span>` : index === 0 ? '<span class="candidate-tag">Candidate</span>' : '<span class="candidate-tag candidate-alt">Alternative</span>'}</div>
       <p class="result-reason">${escapeHTML(item.reason)}</p>
       <dl class="service-facts"><div><dt>Data model</dt><dd>${escapeHTML(service.model)}</dd></div><div><dt>API / protocol</dt><dd>${escapeHTML(service.api)}</dd></div><div><dt>Role</dt><dd>${escapeHTML(service.role)}</dd></div></dl>
       ${item.caveat ? `<p class="caveat"><strong>Validation gate</strong> ${escapeHTML(item.caveat)}</p>` : ''}
@@ -152,8 +178,9 @@ function renderResults(result) {
       <div class="card-actions"><button class="button button-small" data-action="compare-add" data-service="${escapeHTML(service.id)}">Add to compare</button></div>
     </article>`;
   }).join('');
-  const nodeLabel = (id) => result.architecture.find((node) => node.id === id)?.label || id;
-  const architecture = result.architecture?.length ? `<section class="result-section" aria-label="Architecture responsibilities"><h2>Architecture responsibilities</h2><p>Choose ONE platform alternative for each authoritative role. Cached and indexed copies are not additional sources of truth.</p><div class="architecture-grid">${result.architecture.map((item) => `<article class="architecture-node"><p class="eyebrow">${escapeHTML(item.role)} · ${escapeHTML(item.kind)}</p><h3>${escapeHTML(item.label)}</h3><p>${item.serviceIds.map((id) => escapeHTML(serviceById[id].name)).join(' OR ')}</p><p>${escapeHTML(item.boundary)}</p></article>`).join('')}</div>${result.architectureLinks?.length ? `<ol class="architecture-flow" aria-label="Synchronisation and failure boundaries">${result.architectureLinks.map((link) => `<li><strong>${escapeHTML(nodeLabel(link.from))} → ${escapeHTML(nodeLabel(link.to))}</strong><p>${escapeHTML(link.purpose)}</p><p>${escapeHTML(link.boundary)}</p></li>`).join('')}</ol>` : ''}<p class="small-note">Independent stores are not automatically transactionally consistent.</p></section>` : '';
+  const architecture = renderArchitecture(result);
+  const alsoAssess = result.alsoAssess?.length ? `<section class="result-section"><h2>Also assess — JSON does not exclude relational engines</h2>${result.alsoAssess.map((item) => `<p><strong>${escapeHTML(serviceById[item.serviceId].name)}</strong> ${escapeHTML(item.reason)} ${sourceLinks(item.sourceIds)}</p>`).join('')}</section>` : '';
+  const performance = `<section class="result-section"><h2>Performance review</h2><ul class="plain-list">${guidanceFor(result.candidates.map((item) => item.serviceId)).map((item) => `<li>${escapeHTML(item.text)} ${sourceLinks(item.sourceIds)}</li>`).join('')}</ul></section>`;
   const exclusions = result.exclusions.length ? `<section class="result-section"><h2>Documented constraint</h2>${result.exclusions.map((item) => `<p class="exclusion"><strong>${escapeHTML(serviceById[item.serviceId]?.name || item.serviceId)} not shortlisted:</strong> ${escapeHTML(item.reason)} ${sourceLinks(item.sourceIds)}</p>`).join('')}</section>` : '';
   const unknowns = result.unknowns.length ? `<section class="result-section"><h2>Open questions</h2><ul class="plain-list">${result.unknowns.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></section>` : '';
   const changes = result.changes.length ? `<section class="result-section"><h2>What would change this result?</h2><ul class="plain-list">${result.changes.map((text) => `<li>${escapeHTML(text)}</li>`).join('')}</ul></section>` : '';
@@ -171,7 +198,7 @@ function renderResults(result) {
     <details class="requirements-summary"><summary>Requirements used and recorded</summary><p>Workload, data model/access pattern, compatibility, confirmed source roles and transaction requirements influence the shortlist. Scale, priorities, geography, security and recovery remain configuration-review inputs, not sizing or compliance claims.</p><dl class="profile-review">${requirements || '<div><dt>Requirements</dt><dd>No answers supplied.</dd></div>'}</dl></details>
     ${candidates.length ? `<section class="result-grid" aria-label="Service candidates">${candidates}</section>` : result.kind === 'no-database-needed' ? `<section class="empty-state"><h2>No new store selected</h2><p>${state.answers.migrationIntent === 'keep' ? 'The existing database remains the source of truth; no migration or new store is inferred.' : 'Your stated requirement does not need persistent storage. Reassess if durable records or files become necessary.'}</p></section>` : '<section class="empty-state"><h2>No service selected yet</h2><p>Resolve the open questions below before treating a service as a fit.</p></section>'}
     ${result.decisions.length ? `<section class="result-section"><h2>Decision boundaries</h2><ul class="plain-list">${result.decisions.map((decision) => `<li>${escapeHTML(decision.outcome)}</li>`).join('')}</ul></section>` : ''}
-    ${architecture}${exclusions}${unknowns}${changes}
+    ${architecture}${alsoAssess}${exclusions}${unknowns}${changes}${performance}
     <section class="result-section"><h2>Cost, operations and recovery</h2><p>Level 1 is the platform shortlist; Level 2 is its configuration and design review. There is no numeric score, price estimate or capacity recommendation. Compare current regional compute, storage, throughput, backup, networking, transfer and operating costs using the <a href="https://azure.microsoft.com/en-us/pricing/calculator/" target="_blank" rel="noreferrer">Azure Pricing Calculator</a> and each service’s current price page.</p><p>HA is not backup or disaster recovery, and read replicas are not a complete recovery strategy. Verify retention, restore and application failover against written RPO/RTO targets. Authentication, managed identity, encryption/keys, RBAC, private access and auditing are service/configuration-specific; no common compliance guarantee is implied.</p></section>
     ${requirementsNotes}
     ${['scaleNotes', 'recoveryNotes', 'migrationDetails'].filter((id) => state.answers[id]?.trim()).map((id) => `<section class="result-section"><h2>${escapeHTML({ scaleNotes: 'Scale', recoveryNotes: 'Recovery', migrationDetails: 'Migration inventory' }[id])} note you recorded</h2><p>${escapeHTML(state.answers[id].trim())}</p><p class="small-note">Recorded for your review, not used to infer capacity, compatibility or recovery guarantees.</p></section>`).join('')}
@@ -181,8 +208,8 @@ function renderResults(result) {
 
 function serviceCard(service, compact = false) {
   const selected = state.compare.has(service.id);
-  return `<article class="service-card">
-    <div class="service-card-heading"><div><p class="eyebrow">${escapeHTML(service.family)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div><span class="role-badge">${escapeHTML(service.role)}</span></div>
+  return `<article class="service-card" ${familyAttributes(service)}>
+    <div class="service-card-heading"><div><p class="eyebrow">${escapeHTML(familyFor(service).label)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div><span class="role-badge">${escapeHTML(service.role)}</span></div>
     ${service.aliases?.length ? `<p class="small-note">Also known as: ${service.aliases.map(escapeHTML).join(', ')}</p>` : ''}
     <p>${escapeHTML(service.summary)}</p>
     <dl class="service-facts"><div><dt>Model</dt><dd>${escapeHTML(service.model)}</dd></div><div><dt>API / protocol</dt><dd>${escapeHTML(service.api)}</dd></div></dl>
@@ -194,24 +221,23 @@ function serviceCard(service, compact = false) {
 }
 
 function renderExplorer() {
-  const families = ['All', ...new Set(services.map((service) => service.family))];
+  const familyOptions = ['All', ...families.map((family) => family.label)];
   const query = state.explorerQuery.toLocaleLowerCase();
   const visible = services.filter((service) =>
-    (state.explorerFilter === 'All' || service.family === state.explorerFilter) &&
+    (state.explorerFilter === 'All' || familyFor(service).label === state.explorerFilter) &&
     `${service.name} ${service.family} ${service.model} ${service.role} ${service.api} ${(service.aliases || []).join(' ')} ${service.summary}`.toLocaleLowerCase().includes(query)
   );
   root.innerHTML = `<section class="view-heading"><div><p class="eyebrow">SERVICE EXPLORER · ROLES, NOT A FLAT RANKING</p><h1>Explore Azure Databases</h1><p class="lede">Browse engines, APIs, service models, caches, object stores, search indexes and analytics platforms as distinct roles.</p></div></section>
-    <div class="explorer-tools"><label class="search-field">Search the catalogue<input id="service-search" type="search" value="${escapeHTML(state.explorerQuery)}" placeholder="Search name, model or role"></label><label>Service family<select id="family-filter">${families.map((family) => `<option ${state.explorerFilter === family ? 'selected' : ''}>${escapeHTML(family)}</option>`).join('')}</select></label><span class="small-note">${visible.length} services listed · select up to three to compare</span></div>
-    <section class="service-grid">${visible.length ? visible.map((service) => serviceCard(service)).join('') : '<p class="empty-state">No services match these filters.</p>'}</section>`;
+    <div class="explorer-tools"><label class="search-field">Search the catalogue<input id="service-search" type="search" value="${escapeHTML(state.explorerQuery)}" placeholder="Search name, model or role"></label><label>Service family<select id="family-filter">${familyOptions.map((family) => `<option ${state.explorerFilter === family ? 'selected' : ''}>${escapeHTML(family)}</option>`).join('')}</select></label><span class="small-note">${visible.length} services listed · select up to three to compare</span></div>
+    ${visible.length ? families.map((family) => { const members = visible.filter((service) => familyFor(service).id === family.id); return members.length ? `<section class="family-section" data-family="${family.id}"><h2>${escapeHTML(family.label)}</h2><div class="service-grid">${members.map((service) => serviceCard(service)).join('')}</div></section>` : ''; }).join('') : '<p class="empty-state">No services match these filters.</p>'}`;
 }
 
 function renderCompare() {
   const selected = services.filter((service) => state.compare.has(service.id));
-  const allCapabilities = [...new Set(selected.flatMap((service) => Object.keys(service.capabilities)))];
-  const table = selected.length >= 2 ? `<div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable service comparison"><table class="comparison-table"><caption>Documented capability states; absence of a claim is not a negative claim.</caption><thead><tr><th scope="col">Capability</th>${selected.map((service) => `<th scope="col">${escapeHTML(service.name)}<small>${escapeHTML(service.model)}</small></th>`).join('')}</tr></thead><tbody>${allCapabilities.map((capability) => `<tr><th scope="row">${escapeHTML(capability.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`))}</th>${selected.map((service) => { const entry = service.capabilities[capability]; return `<td>${entry ? `${capabilityStatus(entry.status)}${entry.condition ? `<small>${escapeHTML(entry.condition)}</small>` : ''}` : capabilityStatus('unknown')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><h2>Select two or three services to compare</h2><p>Choose services in Explore or from a recommendation.</p></div>';
+  const table = selected.length >= 2 ? `<div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable service comparison"><table class="comparison-table"><caption>Common technical dimensions followed by meaningful engine-specific requirements.</caption><thead><tr><th scope="col">Dimension</th>${selected.map((service) => `<th scope="col" ${familyAttributes(service)}>${escapeHTML(service.name)}<small>${escapeHTML(familyFor(service).label)}</small></th>`).join('')}</tr></thead><tbody>${comparisonRows(selected).map((row) => `<tr><th scope="row">${escapeHTML(row.label)}</th>${row.cells.map((entry) => `<td>${capabilityStatus(entry.status)}<small>${escapeHTML(entry.text || entry.condition || (entry.status === 'unknown' ? 'Unknown — verification required.' : 'Documented for this engine/API.'))}</small>${sourceLinks(entry.sourceIds)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><h2>Select two or three services to compare</h2><p>Choose services in Explore or from a recommendation.</p></div>';
   root.innerHTML = `<section class="view-heading"><div><p class="eyebrow">SIDE-BY-SIDE · DOCUMENTED STATES, NOT SCORES</p><h1>Compare Services</h1><p class="lede">Conditional means a feature depends on a version, API, tier, region or configuration. Unknown is not the same as unsupported.</p></div></section>
     <div class="compare-picker">${services.map((service) => `<label><input type="checkbox" data-action="compare-toggle" data-service="${escapeHTML(service.id)}" ${state.compare.has(service.id) ? 'checked' : ''} ${!state.compare.has(service.id) && state.compare.size >= 3 ? 'disabled' : ''}>${escapeHTML(service.name)}</label>`).join('')}</div>
-    ${table}
+    <p class="comparison-legend"><strong>Legend:</strong> Supported: documented scope. Conditional: inspect the stated conditions. Unsupported: documented limitation. Unknown: verification required, not a rejection. Not applicable: a different engine/API contract.</p>${table}
     <div class="small-note">For a production comparison, verify each candidate’s current feature matrix and the exact target region, engine version, tier, and configuration.</div>`;
 }
 
@@ -224,6 +250,7 @@ function renderConcepts() {
       <article class="concept-card"><p class="eyebrow">04 · MULTI-STORE</p><h2>Separate source from derived data</h2><p>Files, search indexes, caches, transactions and analytics can have different owners. Make sync lag, invalidation, rebuild, failure and recovery boundaries explicit.</p><p>AI and RAG do not automatically require a vector database. Use vector search only when similarity retrieval is a demonstrated requirement.</p></article>
       <article class="concept-card"><p class="eyebrow">05 · RECOVERY</p><h2>Write down RPO and RTO</h2><p>Recovery Point Objective (RPO) is the amount of recent data the business can afford to lose. Recovery Time Objective (RTO) is how long the service may be unavailable.</p><p>Translate each target into backup retention, restore tests, high availability, cross-region recovery, network and application failover. Check tier and region-specific capabilities; no service name guarantees a target.</p></article>
       <article class="concept-card"><p class="eyebrow">06 · COST &amp; OPERATIONS</p><h2>Compare drivers, not imaginary totals</h2><p>Cost can depend on compute, storage, throughput, backup, replicas, data transfer, licensing and operational effort. Gather real usage and use current regional prices.</p><p>This navigator does not guess capacity, quote prices, or promise compliance. More control usually shifts more maintenance and recovery work to your team.</p></article>
+      <article class="concept-card"><p class="eyebrow">07 · PERFORMANCE</p><h2>Measure the workload, not the service maximum</h2>${performanceGuidance.map((item) => `<p>${escapeHTML(item.text)} ${sourceLinks(item.sourceIds)}</p>`).join('')}</article>
     </section>
     <section class="result-section article-link-card"><p class="eyebrow">COMPANION ARTICLE</p><h2>Azure SQL, PostgreSQL, MySQL or Cosmos DB: How Do You Choose the Right Database on Azure?</h2><p>A practical, data-first guide to the engine and platform distinctions in this navigator.</p><a class="button button-small" href="./docs/article.html">Read the article →</a></section>`;
 }

@@ -27,4 +27,6 @@ The initial evidence snapshot was checked on **1 November 2026**. Microsoft Lear
 
 ## Research sources
 
+Specific service overviews support model/operating-model summaries; feature pages support vector, graph, JSON and replica conditions. Hub-only capability citations fail integrity checks. Profile fields preserve conditions and source IDs, while unverified configuration-specific claims remain unknown. Performance guidance is tied to official query/index, application development, replica, partition and cache-aside pages. A product maximum never substitutes for measured workload behaviour.
+
 See the app's [source register](sources.md) for all IDs and limitations. The evidence base includes Azure data model guidance, the Azure SQL decision tree, PostgreSQL extension allow-list documentation, Cosmos DB consistency and partitioning guidance, Azure Database for MySQL and PostgreSQL overviews, DocumentDB/Cosmos API documentation, lifecycle/retirement notices and object/search/analytics service references.
