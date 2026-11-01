@@ -167,7 +167,7 @@ function renderResults(result) {
     const service = serviceById[item.serviceId];
     const capEntries = Object.entries(service.capabilities);
     return `<article ${familyAttributes(service)} class="result-card ${index === 0 && result.kind !== 'multi-store' ? 'result-card-primary' : ''}">
-      <div class="result-card-top"><div><p class="eyebrow">${escapeHTML(familyFor(service).label)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div>${result.kind === 'multi-store' ? `<span class="candidate-tag">${escapeHTML(service.role)}</span>` : index === 0 ? '<span class="candidate-tag">Candidate</span>' : '<span class="candidate-tag candidate-alt">Alternative</span>'}</div>
+      <div class="result-card-top"><div><p class="eyebrow">${escapeHTML(familyFor(service).label)} · ${escapeHTML(service.kind)}</p><h3>${escapeHTML(service.name)}</h3></div>${result.kind === 'multi-store' ? `<span class="candidate-tag">${escapeHTML(service.role)}</span>` : index === 0 ? '<span class="candidate-tag tag-word">Candidate</span>' : '<span class="candidate-tag tag-word candidate-alt">Alternative</span>'}</div>
       <p class="result-reason">${escapeHTML(item.reason)}</p>
       <dl class="service-facts"><div><dt>Data model</dt><dd>${escapeHTML(service.model)}</dd></div><div><dt>API / protocol</dt><dd>${escapeHTML(service.api)}</dd></div><div><dt>Role</dt><dd>${escapeHTML(service.role)}</dd></div></dl>
       ${item.caveat ? `<p class="caveat"><strong>Validation gate</strong> ${escapeHTML(item.caveat)}</p>` : ''}

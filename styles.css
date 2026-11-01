@@ -316,11 +316,13 @@ select, .search-field input {
   box-shadow: var(--shadow);
 }
 .result-card-primary { border-top: 3px solid var(--accent); }
-.result-card-top, .service-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.result-card-top, .service-card-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 6px 12px; }
+.result-card-top > div, .service-card-heading > div { flex: 1 1 10rem; min-width: 0; }
 .result-card-top .eyebrow, .service-card-heading .eyebrow { margin-bottom: 5px; }
 .candidate-tag, .role-badge {
   flex: 0 1 auto;
-  max-width: 45%;
+  max-width: 100%;
+  min-width: 0;
   overflow-wrap: break-word;
   padding: 3px 8px;
   border-radius: 999px;
@@ -329,10 +331,10 @@ select, .search-field input {
   font-size: 10px;
   font-weight: 700;
 }
-.candidate-tag { flex: none; white-space: nowrap; }
+.tag-word { flex: none; white-space: nowrap; }
 .candidate-alt { background: var(--surface-strong); color: var(--ink-muted); }
 .result-reason { margin: 12px 0; color: var(--ink-muted); font-size: 13px; }
-.service-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.service-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 8px; margin: 12px 0; }
 .service-facts > div { min-width: 0; padding: 9px; border-radius: 5px; background: var(--surface-muted); }
 .service-facts dt { color: var(--ink-soft); font-size: 9px; font-weight: 700; text-transform: uppercase; }
 .service-facts dd { margin: 3px 0 0; color: var(--ink); font-size: 11px; }

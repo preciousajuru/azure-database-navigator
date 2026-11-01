@@ -130,6 +130,11 @@ test('badge, tag, chip and pill words fit across every scenario, explorer family
           if (required > width + 1) failures.push({ className: element.className, word, required, width });
         }
         measure.remove();
+        if (element.scrollWidth > element.clientWidth + 1) failures.push({ className: element.className, text: element.textContent.trim(), scrollWidth: element.scrollWidth, clientWidth: element.clientWidth });
+      }
+      for (const element of document.querySelectorAll('.result-card, .service-card, .service-facts > div')) {
+        if (!element.getClientRects().length) continue;
+        if (element.scrollWidth > element.clientWidth + 1) failures.push({ container: element.className, text: element.textContent.trim().slice(0, 60), scrollWidth: element.scrollWidth, clientWidth: element.clientWidth });
       }
       return failures;
     });

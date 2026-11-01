@@ -2,7 +2,7 @@
 
 All eight PNGs in `screenshots/` are genuine Chromium/Playwright captures from the corrected local production application at `/azure-database-navigator/`, captured on **1 November 2026**. They are not deployment evidence, customer screenshots or image-model mock-ups.
 
-The captures were refreshed after correcting badge sizing: candidate tags keep whole words and role badges wrap only between words. The browser matrix also measures the longest word against each badge's content width.
+The captures were refreshed after correcting badge sizing: single-word candidate tags stay whole, multi-word role tags wrap only between words and move below the heading when space is short, and fact cells stack rather than squeeze. The browser matrix measures the longest word against each badge's content width and rejects overflow inside badges, result/explorer cards and fact cells.
 
 | File | Actual state | Viewport / theme |
 |---|---|---|
