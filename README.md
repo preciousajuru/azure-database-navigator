@@ -77,4 +77,4 @@ Source code is MIT-licensed. Original article and documentation text is licensed
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and open an [evidence correction](.github/ISSUE_TEMPLATE/correction.yml) when a source or claim is unclear. The deployment workflow is manual-only and requires explicit confirmation. Do not run it or enable Pages without publication authorization.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and open an [evidence correction](.github/ISSUE_TEMPLATE/correction.yml) when a source or claim is unclear. The deployment workflow is manual-only and requires explicit confirmation. Do not run it or enable Pages without publication authorisation.

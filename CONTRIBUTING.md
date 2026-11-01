@@ -40,4 +40,4 @@ Original article and documentation content are licensed under CC BY 4.0; source 
 
 ## Pull requests
 
-Describe the user impact, sources checked, rule IDs changed, tests run and any remaining uncertainty. Use the correction issue template for evidence disputes. Do not enable or invoke the manual Pages deployment workflow without explicit publication authorization.
+Describe the user impact, sources checked, rule IDs changed, tests run and any remaining uncertainty. Use the correction issue template for evidence disputes. Do not enable or invoke the manual Pages deployment workflow without explicit publication authorisation.

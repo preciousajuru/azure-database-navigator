@@ -1,11 +1,11 @@
 # Publication readiness checklist
 
-This checklist prepares a release. It does **not** authorize enabling GitHub Pages, running deployment, publishing an announcement or claiming a live site.
+This checklist prepares a release. It does **not** authorise enabling GitHub Pages, running deployment, publishing an announcement or claiming a live site.
 
 ## Repository
 
 - [x] Independent companion repository and product identity.
-- [x] MIT source license and CC BY 4.0 article/documentation attribution boundary.
+- [x] MIT source licence and CC BY 4.0 article/documentation attribution boundary.
 - [x] Source register, research method and decision model.
 - [x] Deterministic tests and catalogue-integrity check.
 - [x] CI workflow and manual-only Pages workflow prepared.
@@ -28,7 +28,7 @@ This checklist prepares a release. It does **not** authorize enabling GitHub Pag
 - [x] Article title, author, article date, British English and disclaimer included.
 - [ ] Proofread against current sources and check every outbound link at publication time.
 - [ ] Obtain final editorial approval.
-- [ ] Publish the companion article only after explicit authorization.
+- [ ] Publish the companion article only after explicit authorisation.
 
 ## Community impact and announcement
 
